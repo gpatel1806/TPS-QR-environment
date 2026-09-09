@@ -1,4 +1,4 @@
-from flask import Flask, abort
+from flask import Flask, abort, render_template
 
 app = Flask(__name__)
 
@@ -11,6 +11,7 @@ EQUIPMENT_DATABASE = {
         "rating": "50 MVA",
         "voltage": "220 kV / 33 kV",
         "status": "In Service",
+        "commission_date": "30-01-1995",
     },
     "EQ-00002": {
         "name": "Vacuum Circuit Breaker Incomer",
@@ -19,6 +20,7 @@ EQUIPMENT_DATABASE = {
         "rating": "1250 A",
         "voltage": "33 kV",
         "status": "In Service",
+        "commission_date": "30-11-1995",
     },
     "EQ-00003": {
         "name": "Boiler Feed Pump Motor 01",
@@ -27,6 +29,7 @@ EQUIPMENT_DATABASE = {
         "rating": "630 kW",
         "voltage": "6.6 kV",
         "status": "Under Maintenance",
+        "commission_date": "30-02-1995",
    },
    "EQ-00004": {
         "name": "Emergency diesel generator",
@@ -35,6 +38,7 @@ EQUIPMENT_DATABASE = {
         "rating": "1500kva",
         "voltage": "415 v",
         "status": "standby",
+        "commission_date": "30-03-1995",
    },
 }
 
@@ -59,18 +63,10 @@ def get_equipment(equipment_id):
     if not equipment:
         abort(404, description=f"Equipment with ID '{equipment_id}' not found.")
 
-    # Return structured plain text for now (Lesson 05 will replace this with HTML)
-    return f"""
-    --- EQUIPMENT SPECIFICATION SHEET ---
-    Asset ID: {equipment_id}
-    Name:     {equipment['name']}
-    Tag:      {equipment['tag']}
-    Area:     {equipment['area']}
-    Rating:   {equipment['rating']}
-    Voltage:  {equipment['voltage']}
-    Status:   {equipment['status']}
-    """
-
+  # Pass the data into the Jinja2 template
+    return render_template(
+        "equipment.html", equipment_id=equipment_id, equipment=equipment
+    )
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)
