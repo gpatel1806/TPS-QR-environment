@@ -1,97 +1,66 @@
+import os
 from flask import Flask, abort, render_template, request
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
-# Simulated Plant Equipment Registry
-EQUIPMENT_DATABASE = {
-    "EQ-00001": {
-        "name": "Main Step-Down Transformer 01",
-        "tag": "220/33kV-TR-01",
-        "area": "Switchyard Bay 1",
-        "rating": "50 MVA",
-        "voltage": "220 kV / 33 kV",
-        "status": "In Service",
-        "commission_date": "2021-04-10",
-        "ppe_required": [
-            "Safety Helmet",
-            "Dielectric Safety Shoes (20kV)",
-            "Safety Glasses",
-            "Arc Flash Suit Class 4",
-        ],
-    },
-    "EQ-00002": {
-        "name": "Vacuum Circuit Breaker Incomer",
-        "tag": "33kV-VCB-INC-01",
-        "area": "33kV Switchgear Room",
-        "rating": "1250 A",
-        "voltage": "33 kV",
-        "status": "Under Maintenance",
-        "commission_date": "2022-01-18",
-        "ppe_required": [
-            "Safety Helmet",
-            "Safety Shoes",
-            "Insulated Gloves (33kV Rated)",
-        ],
-    },
-    "EQ-00003": {
-        "name": "Boiler Feed Pump Motor 01",
-        "tag": "BFP-MTR-01",
-        "area": "Boiler House Level 0",
-        "rating": "630 kW",
-        "voltage": "6.6 kV",
-        "status": "Breakdown",
-        "commission_date": "2019-11-05",
-        "ppe_required": [
-            "Safety Helmet",
-            "Steel Toe Shoes",
-            "Ear Protection (Ear Plugs/Muffs)",
-        ],
-    },
-    "EQ-00004": {
-        "name": "Emergency Diesel Generator",
-        "tag": "DG-SET-01",
-        "area": "DG Yard",
-        "rating": "1500 kVA",
-        "voltage": "415 V",
-        "status": "Standby",
-        "commission_date": "2023-08-20",
-        "ppe_required": [
-            "Safety Helmet",
-            "Safety Shoes",
-            "Ear Protection",
-            "Heat Resistant Gloves",
-        ],
-    },
-}
+# Configure SQLite Database File Path
+basedir = os.path.abspath(os.path.dirname(__file__))
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
+    basedir, "equipment.db"
+)
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db = SQLAlchemy(app)
+
+
+# Define the Equipment Model (Database Table Schema)
+class Equipment(db.Model):
+    __tablename__ = "equipments"
+
+    id = db.Column(db.String(20), primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    tag = db.Column(db.String(50), nullable=False, unique=True)
+    area = db.Column(db.String(50), nullable=False)
+    rating = db.Column(db.String(50), nullable=False)
+    voltage = db.Column(db.String(50), nullable=False)
+    status = db.Column(db.String(30), nullable=False, default="In Service")
+    commission_date = db.Column(db.String(20), nullable=False)
+    ppe_required = db.Column(
+        db.String(255), nullable=False
+    )  # Stored as comma-separated values
+
+    def get_ppe_list(self):
+        """Helper to convert comma-separated string back to a clean list for templates."""
+        if not self.ppe_required:
+            return []
+        return [item.strip() for item in self.ppe_required.split(",")]
 
 
 @app.route("/")
 def home():
-    # Read query parameters sent from the search form
     search_query = request.args.get("q", "").strip().lower()
     status_filter = request.args.get("status", "").strip()
 
-    filtered_equipment = {}
+    # Query all assets from the persistent database table
+    query = Equipment.query
 
-    for eq_id, data in EQUIPMENT_DATABASE.items():
-        # Match search text against ID, Name, Tag, or Area
-        text_match = (
-            not search_query
-            or search_query in eq_id.lower()
-            or search_query in data["name"].lower()
-            or search_query in data["tag"].lower()
-            or search_query in data["area"].lower()
+    if status_filter:
+        query = query.filter_by(status=status_filter)
+
+    if search_query:
+        query = query.filter(
+            (Equipment.id.ilike(f"%{search_query}%"))
+            | (Equipment.name.ilike(f"%{search_query}%"))
+            | (Equipment.tag.ilike(f"%{search_query}%"))
+            | (Equipment.area.ilike(f"%{search_query}%"))
         )
 
-        # Match status filter if one is selected
-        status_match = not status_filter or data["status"] == status_filter
-
-        if text_match and status_match:
-            filtered_equipment[eq_id] = data
+    equipments = query.all()
 
     return render_template(
         "index.html",
-        equipments=filtered_equipment,
+        equipments=equipments,
         search_query=search_query,
         status_filter=status_filter,
     )
@@ -99,18 +68,15 @@ def home():
 
 @app.route("/health")
 def health_status():
-    return "Status: OK | Database: Standby"
+    return "Status: OK | Database: SQLite Connected"
 
 
 @app.route("/equipment/<equipment_id>")
 def get_equipment(equipment_id):
-    equipment = EQUIPMENT_DATABASE.get(equipment_id)
-
-    if not equipment:
-        abort(404, description=f"Equipment with ID '{equipment_id}' not found.")
-
+    # Query database using primary key; trips automatic 404 if record doesn't exist
+    equipment = Equipment.query.get_or_404(equipment_id)
     return render_template(
-        "equipment.html", equipment_id=equipment_id, equipment=equipment
+        "equipment.html", equipment_id=equipment.id, equipment=equipment
     )
 
 

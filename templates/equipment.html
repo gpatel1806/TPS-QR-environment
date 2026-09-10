@@ -108,7 +108,7 @@
             <!-- 2. Safety & PPE Tab -->
             <div class="tab-pane fade" id="safety-pane" role="tabpanel">
                 <button
-                <span class="badge rounded-pill bg-warning text-dark ms-1">{{ equipment.ppe_required|length }}</span>
+                <span class="badge rounded-pill bg-warning text-dark ms-1">{{ equipment.get_ppe_list()|length }}</span>
                 </button>
                 <div class="alert alert-warning border-warning d-flex align-items-center mb-3">
                     <i class="bi bi-shield-exclamation fs-4 me-2"></i>
@@ -116,7 +116,7 @@
                 </div>
                 <h6 class="fw-bold text-secondary mb-2">Mandatory Personal Protective Equipment (PPE):</h6>
                 <ul class="list-group list-group-flush border rounded">
-                    {% for ppe in equipment.ppe_required %}
+                    {% for ppe in equipment.get_ppe_list() %}
                         <li class="list-group-item small d-flex align-items-center">
                             <i class="bi bi-check2-square text-success me-2 fs-6"></i> {{ ppe }}
                         </li>
