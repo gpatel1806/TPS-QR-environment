@@ -1,0 +1,62 @@
+/* Custom Industrial traffolyte-style asset tag */
+.asset-tag-plate {
+    background-color: #1a1e24;
+    color: #e2e8f0;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    letter-spacing: 1.5px;
+    padding: 6px 14px;
+    border-radius: 4px;
+    border: 1px solid #4a5568;
+    display: inline-block;
+}
+
+/* Tab bar responsiveness for small handheld displays */
+.nav-tabs .nav-link {
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #495057;
+}
+
+.nav-tabs .nav-link.active {
+    border-bottom: 3px solid #0d6efd;
+    color: #0d6efd;
+    background-color: transparent;
+}
+
+/* Field Print Engine: optimizes paper tags and maintenance sheets */
+@media print {
+    /* Suppress interactive chrome */
+    nav,
+    footer,
+    .nav-tabs,
+    .btn,
+    .alert {
+        display: none !important;
+    }
+
+    /* Force all tab content panes to display sequentially on paper */
+    .tab-content > .tab-pane {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        margin-bottom: 2rem;
+        page-break-inside: avoid;
+    }
+
+    body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        font-size: 11pt;
+    }
+
+    .card {
+        border: 1px solid #000000 !important;
+        box-shadow: none !important;
+    }
+
+    .card-header {
+        background-color: #f1f5f9 !important;
+        color: #000000 !important;
+        border-bottom: 1px solid #000000 !important;
+    }
+}
