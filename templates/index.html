@@ -5,57 +5,60 @@ Equipment Directory | Substation A
 {% endblock %}
 
 {% block content %}
-<div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0056b3; padding-bottom: 10px; margin-bottom: 20px;">
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
         <div>
-            <h1 style="margin: 0; font-size: 22px; color: #0056b3;">Plant Equipment Registry</h1>
-            <p style="margin: 5px 0 0 0; color: #666; font-size: 13px;">Master Asset Directory &bull; Substation A</p>
+            <h4 class="mb-0 fw-bold text-primary"><i class="bi bi-cpu me-2"></i>Plant Equipment Registry</h4>
+            <span class="text-muted small">Master Asset Directory &bull; Substation A</span>
         </div>
-        <div style="font-size: 14px; font-weight: bold; background-color: #e3f2fd; color: #0d47a1; padding: 6px 12px; border-radius: 20px;">
-            Total Assets: {{ equipments|length }}
+        <div>
+            <span class="badge bg-primary fs-6 px-3 py-2 rounded-pill">
+                Total Assets: {{ equipments|length }}
+            </span>
         </div>
     </div>
 
-    <!-- Asset Directory Table -->
-    <table style="width: 100%; border-collapse: collapse; text-align: left;">
-        <thead>
-            <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                <th style="padding: 12px 10px; font-size: 13px; color: #495057;">ID</th>
-                <th style="padding: 12px 10px; font-size: 13px; color: #495057;">Equipment Name</th>
-                <th style="padding: 12px 10px; font-size: 13px; color: #495057;">Tag</th>
-                <th style="padding: 12px 10px; font-size: 13px; color: #495057;">Area</th>
-                <th style="padding: 12px 10px; font-size: 13px; color: #495057;">Status</th>
-                <th style="padding: 12px 10px; font-size: 13px; color: #495057; text-align: right;">Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for eq_id, eq_data in equipments.items() %}
-            <tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 12px 10px; font-weight: bold; color: #0056b3;">{{ eq_id }}</td>
-                <td style="padding: 12px 10px;">{{ eq_data.name }}</td>
-                <td style="padding: 12px 10px; color: #555;">{{ eq_data.tag }}</td>
-                <td style="padding: 12px 10px; color: #555;">{{ eq_data.area }}</td>
-                <td style="padding: 12px 10px;">
-                    {% if eq_data.status == "In Service" %}
-                        <span style="color: #28a745; font-weight: bold; font-size: 13px;">● In Service</span>
-                    {% elif eq_data.status == "Under Maintenance" %}
-                        <span style="color: #ff9800; font-weight: bold; font-size: 13px;">▲ Maintenance</span>
-                    {% elif eq_data.status == "Breakdown" %}
-                        <span style="color: #dc3545; font-weight: bold; font-size: 13px;">■ Breakdown</span>
-                    {% else %}
-                        <span style="color: #6c757d; font-size: 13px;">{{ eq_data.status }}</span>
-                    {% endif %}
-                </td>
-                <td style="padding: 12px 10px; text-align: right;">
-                    <a href="/equipment/{{ eq_id }}" style="background-color: #0056b3; color: white; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold;">
-                        View Asset &rarr;
-                    </a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="ps-3">ID</th>
+                        <th>Equipment Name</th>
+                        <th>Tag</th>
+                        <th>Area</th>
+                        <th>Status</th>
+                        <th class="text-end pe-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for eq_id, eq_data in equipments.items() %}
+                    <tr>
+                        <td class="ps-3 fw-bold text-primary">{{ eq_id }}</td>
+                        <td class="fw-semibold">{{ eq_data.name }}</td>
+                        <td><code>{{ eq_data.tag }}</code></td>
+                        <td><span class="text-muted small">{{ eq_data.area }}</span></td>
+                        <td>
+                            {% if eq_data.status == "In Service" %}
+                                <span class="badge bg-success">● In Service</span>
+                            {% elif eq_data.status == "Under Maintenance" %}
+                                <span class="badge bg-warning text-dark">▲ Maintenance</span>
+                            {% elif eq_data.status == "Breakdown" %}
+                                <span class="badge bg-danger">■ Breakdown</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ eq_data.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-3">
+                            <a href="/equipment/{{ eq_id }}" class="btn btn-sm btn-primary">
+                                View Asset <i class="bi bi-chevron-right ms-1"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}

@@ -4,32 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Plant Equipment System{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS via CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons via CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
-<body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f6f8;">
+<body class="bg-light d-flex flex-column min-vh-100">
 
-    <!-- Plant Top Navigation Bar -->
-    <nav style="background-color: #0b2545; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; color: white;">
-        <div>
-            <span style="font-size: 18px; font-weight: bold; letter-spacing: 0.5px;">⚡ MR TPS </span>
-            <span style="font-size: 11px; background-color: #134074; padding: 3px 8px; border-radius: 4px; margin-left: 10px;">SUBSTATION A</span>
-        </div>
-        <div>
-            <a href="/" style="color: #eef4f8; text-decoration: none; font-size: 14px; margin-left: 20px; font-weight: bold;">Equipment Directory</a>
-            <a href="/health" style="color: #8da9c4; text-decoration: none; font-size: 14px; margin-left: 20px;">System Health</a>
+    <!-- Industrial Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand fw-bold text-uppercase d-flex align-items-center" href="/">
+                <i class="bi bi-lightning-charge-fill text-warning me-2"></i>
+                Plant Asset Ops
+                <span class="badge bg-secondary ms-2 fs-6">Substation A</span>
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link active" href="/"><i class="bi bi-card-list me-1"></i> Asset Directory</a>
+                <a class="nav-link text-light opacity-75" href="/health"><i class="bi bi-heart-pulse me-1"></i> Health</a>
+            </div>
         </div>
     </nav>
 
-    <!-- Main Dynamic Content Bay -->
-    <main style="max-width: 800px; margin: 30px auto; padding: 0 15px;">
+    <!-- Main Container -->
+    <main class="container my-4 flex-grow-1">
         {% block content %}
-        <!-- Child pages inject their content here -->
         {% endblock %}
     </main>
 
-    <!-- Global Footer -->
-    <footer style="text-align: center; padding: 20px; color: #666; font-size: 12px; margin-top: 40px; border-top: 1px solid #ddd;">
-        QR Based Industrial Equipment Management System &bull; Active SCADA Web Bridge
+    <!-- Industrial Footer -->
+    <footer class="bg-white border-top text-center py-3 text-muted small">
+        <div class="container">
+            <i class="bi bi-qr-code me-1"></i> QR Based Industrial Equipment Management System &bull; Active SCADA Web Bridge
+        </div>
     </footer>
 
+    <!-- Bootstrap Bundle with Popper (JavaScript for interactive components) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

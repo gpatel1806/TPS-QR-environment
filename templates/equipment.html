@@ -5,84 +5,98 @@
 {% endblock %}
 
 {% block content %}
-<div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10 col-12">
 
-    <!-- Header Section -->
-    <div style="border-bottom: 2px solid #0056b3; padding-bottom: 10px; margin-bottom: 15px;">
-        <span style="font-size: 12px; font-weight: bold; color: #666; text-transform: uppercase;">Equipment Asset Tag</span>
-        <h1 style="margin: 5px 0; color: #0056b3;">{{ equipment_id }}</h1>
-        <h2 style="margin: 0; font-size: 18px; color: #333;">{{ equipment.name }}</h2>
-    </div>
-
-    <!-- Critical Warning Banner for Breakdown -->
-    {% if equipment.status == "Breakdown" %}
-        <div style="background-color: #dc3545; color: white; padding: 12px; border-radius: 4px; margin-bottom: 15px; font-weight: bold;">
-            CRITICAL WARNING: Equipment is locked out due to an unscheduled breakdown. Do not energize.
+        <!-- Critical Warning Alert if Tripped/Breakdown -->
+        {% if equipment.status == "Breakdown" %}
+        <div class="alert alert-danger d-flex align-items-center shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-3 me-3"></i>
+            <div>
+                <h5 class="alert-heading mb-1 fw-bold">CRITICAL WARNING: ASSET LOCKED OUT</h5>
+                <p class="mb-0 small">This unit is in an unscheduled breakdown condition. Do not energize or operate without clearance from the Electrical Safety Officer.</p>
+            </div>
         </div>
-    {% endif %}
+        {% endif %}
 
-    <!-- Specifications Table -->
-    <table style="width: 100%; border-collapse: collapse; text-align: left;">
-        <tr style="border-bottom: 1px solid #eee;">
-            <th style="padding: 10px 0; color: #555;">Plant Tag:</th>
-            <td style="padding: 10px 0; font-weight: bold;">{{ equipment.tag }}</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #eee;">
-            <th style="padding: 10px 0; color: #555;">Physical Area:</th>
-            <td style="padding: 10px 0;">{{ equipment.area }}</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #eee;">
-            <th style="padding: 10px 0; color: #555;">Operating Rating:</th>
-            <td style="padding: 10px 0;">{{ equipment.rating }}</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #eee;">
-            <th style="padding: 10px 0; color: #555;">Voltage Level:</th>
-            <td style="padding: 10px 0;">{{ equipment.voltage }}</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #eee;">
-            <th style="padding: 10px 0; color: #555;">Commissioning Date:</th>
-            <td style="padding: 10px 0;">{{ equipment.commission_date }}</td>
-        </tr>
-        <tr>
-            <th style="padding: 10px 0; color: #555;">Operational Status:</th>
-            <td style="padding: 10px 0;">
-                {% if equipment.status == "In Service" %}
-                    <span style="background-color: #28a745; color: white; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold;">
-                        ● In Service
-                    </span>
-                {% elif equipment.status == "Under Maintenance" %}
-                    <span style="background-color: #ffc107; color: #333; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold;">
-                        ▲ Under Maintenance
-                    </span>
-                {% elif equipment.status == "Breakdown" %}
-                    <span style="background-color: #dc3545; color: white; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold;">
-                        ■ Breakdown / Tripped
-                    </span>
-                {% else %}
-                    <span style="background-color: #6c757d; color: white; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold;">
-                        {{ equipment.status }}
-                    </span>
-                {% endif %}
-            </td>
-        </tr>
+        <!-- Equipment Specification Card -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-primary text-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-light text-primary text-uppercase mb-1">Equipment Asset ID</span>
+                        <h3 class="mb-0 fw-bold">{{ equipment_id }}</h3>
+                    </div>
+                    <div>
+                        <!-- Dynamic Status Badge -->
+                        {% if equipment.status == "In Service" %}
+                            <span class="badge bg-success fs-6"><i class="bi bi-check-circle-fill me-1"></i> In Service</span>
+                        {% elif equipment.status == "Under Maintenance" %}
+                            <span class="badge bg-warning text-dark fs-6"><i class="bi bi-wrench-adjustable me-1"></i> Maintenance</span>
+                        {% elif equipment.status == "Breakdown" %}
+                            <span class="badge bg-danger fs-6"><i class="bi bi-x-octagon-fill me-1"></i> Breakdown</span>
+                        {% else %}
+                            <span class="badge bg-secondary fs-6">{{ equipment.status }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                <h4 class="card-title text-dark fw-bold mb-3">{{ equipment.name }}</h4>
+
+                <!-- Technical Specification Table -->
+                <div class="table-responsive">
+    <table class="table table-striped table-bordered align-middle mb-0">
+        <tbody>
+            <tr>
+                <th class="text-secondary small text-uppercase" style="width: 40%;"><i class="bi bi-tag-fill me-1"></i> Tag</th>
+                <td class="fw-bold">{{ equipment.tag }}</td>
+            </tr>
+            <tr>
+                <th class="text-secondary small text-uppercase"><i class="bi bi-geo-alt-fill me-1"></i> Area</th>
+                <td>{{ equipment.area }}</td>
+            </tr>
+            <tr>
+                <th class="text-secondary small text-uppercase"><i class="bi bi-speedometer2 me-1"></i> Rating</th>
+                <td>{{ equipment.rating }}</td>
+            </tr>
+            <tr>
+                <th class="text-secondary small text-uppercase"><i class="bi bi-lightning-charge me-1"></i> Voltage</th>
+                <td>{{ equipment.voltage }}</td>
+            </tr>
+            <tr>
+                <th class="text-secondary small text-uppercase"><i class="bi bi-calendar-check me-1"></i> Commissioned</th>
+                <td>{{ equipment.commission_date }}</td>
+            </tr>
+        </tbody>
     </table>
+</div>
 
-    <!-- Mandatory Safety & PPE List -->
-    <div style="margin-top: 25px; padding: 15px; background-color: #fff3cd; border-left: 5px solid #ffc107; border-radius: 4px;">
-        <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 15px; color: #856404;">
-            Mandatory PPE Prior to Inspection / Work:
-        </h3>
-        <ul style="margin: 0; padding-left: 20px; color: #555;">
-            {% for ppe in equipment.ppe_required %}
-                <li style="padding: 2px 0;">{{ ppe }}</li>
-            {% endfor %}
-        </ul>
+                <!-- Mandatory PPE Section -->
+                <div class="card border-warning bg-warning bg-opacity-10 mt-4">
+                    <div class="card-body">
+                        <h6 class="card-title text-warning-emphasis fw-bold mb-2">
+                            <i class="bi bi-shield-fill-check me-2"></i>Mandatory PPE Prior to Inspection / Work:
+                        </h6>
+                        <ul class="mb-0 ps-3 small text-secondary">
+                            {% for ppe in equipment.ppe_required %}
+                                <li class="py-1">{{ ppe }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Action Button Link -->
+                <div class="mt-4 pt-2">
+                    <a href="/" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Equipment Directory
+                    </a>
+                    <button class="btn btn-success btn-sm ms-2"><i class="bi bi-printer me-1"></i> Print Tag</button>
+                </div>
+            </div>
+        </div>
+
     </div>
-
-    <!-- Back to Directory Link -->
-    <div style="margin-top: 20px;">
-        <a href="/" style="color: #0056b3; text-decoration: none; font-size: 14px; font-weight: bold;">&larr; Back to Equipment Directory</a>
-    </div>
-
 </div>
 {% endblock %}
