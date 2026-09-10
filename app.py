@@ -1,4 +1,4 @@
-from flask import Flask, abort, render_template
+from flask import Flask, abort, render_template, request
 
 app = Flask(__name__)
 
@@ -62,28 +62,40 @@ EQUIPMENT_DATABASE = {
             "Heat Resistant Gloves",
         ],
     },
-    "EQ-00005": {
-        "name": "UPS",
-        "tag": "UPS 001",
-        "area": "GT1/2 AREA",
-        "rating": "15 kVA",
-        "voltage": "415 V",
-        "status": "Standby",
-        "commission_date": "2023-09-20",
-        "ppe_required": [
-            "Safety Helmet",
-            "Safety Shoes",
-            "Ear Protection",
-            "Heat Resistant Gloves",
-        ],
-    },
 }
 
 
 @app.route("/")
 def home():
-    # Pass the entire registry to the directory view
-    return render_template("index.html", equipments=EQUIPMENT_DATABASE)
+    # Read query parameters sent from the search form
+    search_query = request.args.get("q", "").strip().lower()
+    status_filter = request.args.get("status", "").strip()
+
+    filtered_equipment = {}
+
+    for eq_id, data in EQUIPMENT_DATABASE.items():
+        # Match search text against ID, Name, Tag, or Area
+        text_match = (
+            not search_query
+            or search_query in eq_id.lower()
+            or search_query in data["name"].lower()
+            or search_query in data["tag"].lower()
+            or search_query in data["area"].lower()
+        )
+
+        # Match status filter if one is selected
+        status_match = not status_filter or data["status"] == status_filter
+
+        if text_match and status_match:
+            filtered_equipment[eq_id] = data
+
+    return render_template(
+        "index.html",
+        equipments=filtered_equipment,
+        search_query=search_query,
+        status_filter=status_filter,
+    )
+
 
 @app.route("/health")
 def health_status():
