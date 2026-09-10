@@ -58,6 +58,8 @@ def home():
 
     equipments = query.all()
 
+    print(f"[SQL TELEMETRY] Loaded {len(equipments)} assets from SQLite.")
+    
     return render_template(
         "index.html",
         equipments=equipments,

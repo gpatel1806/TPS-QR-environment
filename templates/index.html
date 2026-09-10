@@ -65,25 +65,25 @@ Equipment Directory | Substation A
                     </tr>
                 </thead>
                 <tbody>
-                    {% for eq_id, eq_data in equipments.items() %}
+                    {% for eq in equipments %}
                     <tr>
-                        <td class="ps-3 fw-bold text-primary">{{ eq_id }}</td>
-                        <td class="fw-semibold">{{ eq_data.name }}</td>
-                        <td><code>{{ eq_data.tag }}</code></td>
-                        <td><span class="text-muted small">{{ eq_data.area }}</span></td>
+                        <td class="ps-3 fw-bold text-primary">{{ eq.id }}</td>
+                        <td class="fw-semibold">{{ eq.name }}</td>
+                        <td><code>{{ eq.tag }}</code></td>
+                        <td><span class="text-muted small">{{ eq.area }}</span></td>
                         <td>
-                            {% if eq_data.status == "In Service" %}
+                            {% if eq.status == "In Service" %}
                                 <span class="badge bg-success">● In Service</span>
-                            {% elif eq_data.status == "Under Maintenance" %}
+                            {% elif eq.status == "Under Maintenance" %}
                                 <span class="badge bg-warning text-dark">▲ Maintenance</span>
-                            {% elif eq_data.status == "Breakdown" %}
+                            {% elif eq.status == "Breakdown" %}
                                 <span class="badge bg-danger">■ Breakdown</span>
                             {% else %}
-                                <span class="badge bg-secondary">{{ eq_data.status }}</span>
+                                <span class="badge bg-secondary">{{ eq.status }}</span>
                             {% endif %}
                         </td>
                         <td class="text-end pe-3">
-                            <a href="/equipment/{{ eq_id }}" class="btn btn-sm btn-primary">
+                            <a href="/equipment/{{ eq.id }}" class="btn btn-sm btn-primary">
                                 View <i class="bi bi-chevron-right ms-1"></i>
                             </a>
                         </td>
@@ -96,8 +96,7 @@ Equipment Directory | Substation A
                         </td>
                     </tr>
                     {% endfor %}
-                </tbody>
-            </table>
+                </tbody>            </table>
         </div>
     </div>
 </div>
