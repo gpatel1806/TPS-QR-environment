@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Plant Equipment System{% endblock %}</title>
+</head>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f6f8;">
+
+    <!-- Plant Top Navigation Bar -->
+    <nav style="background-color: #0b2545; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; color: white;">
+        <div>
+            <span style="font-size: 18px; font-weight: bold; letter-spacing: 0.5px;">⚡ MR TPS </span>
+            <span style="font-size: 11px; background-color: #134074; padding: 3px 8px; border-radius: 4px; margin-left: 10px;">SUBSTATION A</span>
+        </div>
+        <div>
+            <a href="/" style="color: #eef4f8; text-decoration: none; font-size: 14px; margin-left: 20px; font-weight: bold;">Equipment Directory</a>
+            <a href="/health" style="color: #8da9c4; text-decoration: none; font-size: 14px; margin-left: 20px;">System Health</a>
+        </div>
+    </nav>
+
+    <!-- Main Dynamic Content Bay -->
+    <main style="max-width: 800px; margin: 30px auto; padding: 0 15px;">
+        {% block content %}
+        <!-- Child pages inject their content here -->
+        {% endblock %}
+    </main>
+
+    <!-- Global Footer -->
+    <footer style="text-align: center; padding: 20px; color: #666; font-size: 12px; margin-top: 40px; border-top: 1px solid #ddd;">
+        QR Based Industrial Equipment Management System &bull; Active SCADA Web Bridge
+    </footer>
+
+</body>
+</html>

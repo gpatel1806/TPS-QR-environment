@@ -62,13 +62,28 @@ EQUIPMENT_DATABASE = {
             "Heat Resistant Gloves",
         ],
     },
+    "EQ-00005": {
+        "name": "UPS",
+        "tag": "UPS 001",
+        "area": "GT1/2 AREA",
+        "rating": "15 kVA",
+        "voltage": "415 V",
+        "status": "Standby",
+        "commission_date": "2023-09-20",
+        "ppe_required": [
+            "Safety Helmet",
+            "Safety Shoes",
+            "Ear Protection",
+            "Heat Resistant Gloves",
+        ],
+    },
 }
 
 
 @app.route("/")
 def home():
-    return "Industrial Equipment Management System is Online."
-
+    # Pass the entire registry to the directory view
+    return render_template("index.html", equipments=EQUIPMENT_DATABASE)
 
 @app.route("/health")
 def health_status():
