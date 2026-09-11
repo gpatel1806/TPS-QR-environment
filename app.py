@@ -3,8 +3,10 @@ import io
 import os
 import zipfile
 import qrcode
-from flask import Flask, abort, redirect, render_template, request, send_file, url_for
+from flask import Flask, abort, redirect, render_template, request, send_file, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
@@ -16,6 +18,14 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
+
+# Authentication Setup
+app.config["SECRET_KEY"] = "industrial-plant-secret-key-change-in-prod-9982"
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+login_manager.login_message = "Please authenticate with Engineering credentials to perform this action."
+login_manager.login_message_category = "warning"
 
 
 # Define the Equipment Model (Parent Table)
@@ -54,6 +64,53 @@ class MaintenanceLog(db.Model):
     technician = db.Column(db.String(100), nullable=False)
     status_after = db.Column(db.String(30), nullable=False)
 
+# Define User Model for Role-Based Plant Operations
+class User(UserMixin, db.Model):
+    __tablename__ = "users"
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), unique=True, nullable=False)
+    full_name = db.Column(db.String(100), nullable=False)
+    role = db.Column(db.String(30), nullable=False, default="Engineer")
+    password_hash = db.Column(db.String(256), nullable=False)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password, method="pbkdf2:sha256")
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("home"))
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+
+        user = User.query.filter_by(username=username).first()
+
+        if user and user.check_password(password):
+            login_user(user)
+            flash(f"Access granted. Welcome, {user.full_name}.", "success")
+            next_page = request.args.get("next")
+            return redirect(next_page or url_for("home"))
+        else:
+            flash("Invalid credentials. Access rejected by substation security.", "danger")
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    flash("Session terminated safely.", "info")
+    return redirect(url_for("home"))
 
 @app.route("/")
 def home():
@@ -91,6 +148,7 @@ def health_status():
     return "Status: OK | Database: SQLite Connected"
 
 @app.route("/equipment/new", methods=["GET", "POST"])
+@login_required
 def create_equipment():
     error_message = None
 
@@ -133,7 +191,10 @@ def create_equipment():
 
     return render_template("new_equipment.html", error_message=error_message)
 
+
+
 @app.route("/equipment/<equipment_id>/edit", methods=["GET", "POST"])
+@login_required
 def edit_equipment(equipment_id):
     equipment = Equipment.query.get_or_404(equipment_id)
 
@@ -154,7 +215,10 @@ def edit_equipment(equipment_id):
 
     return render_template("edit_equipment.html", equipment=equipment)
 
+
+
 @app.route("/equipment/<equipment_id>/delete", methods=["POST"])
+@login_required
 def delete_equipment(equipment_id):
     # Fetch equipment or trigger a 404 trip if not present
     equipment = Equipment.query.get_or_404(equipment_id)
@@ -165,7 +229,10 @@ def delete_equipment(equipment_id):
 
     return redirect(url_for("home"))
 
+
+
 @app.route("/equipment/<equipment_id>/log", methods=["POST"])
+@login_required
 def add_maintenance_log(equipment_id):
     equipment = Equipment.query.get_or_404(equipment_id)
 
@@ -191,6 +258,8 @@ def add_maintenance_log(equipment_id):
         db.session.commit()
 
     return redirect(url_for("get_equipment", equipment_id=equipment.id))
+
+
 
 @app.route("/equipment/<equipment_id>")
 def get_equipment(equipment_id):

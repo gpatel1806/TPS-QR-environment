@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}
+Operator Access | Plant Security
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center pt-4">
+    <div class="col-lg-5 col-md-7 col-12">
+        <div class="card shadow border-0">
+            <div class="card-header bg-dark text-white text-center py-4">
+                <i class="bi bi-shield-lock fs-1 text-warning mb-2 d-block"></i>
+                <h5 class="mb-1 fw-bold">Plant Control Authentication</h5>
+                <span class="small text-white-50">Engineering Clearance Level Required</span>
+            </div>
+
+            <div class="card-body p-4">
+                <form method="POST" action="/login{% if request.args.get('next') %}?next={{ request.args.get('next') }}{% endif %}">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-secondary">Operator Badge / Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                            <input type="text" name="username" class="form-control" placeholder="e.g., lead_engineer" required autofocus>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-secondary">Security Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
+                            <input type="password" name="password" class="form-control" placeholder="Enter password" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 fw-semibold py-2">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Authenticate Session
+                    </button>
+                </form>
+            </div>
+            <div class="card-footer text-center bg-light py-2">
+                <span class="text-muted small">Default Demo Credentials: <code>lead_engineer</code> / <code>Substation@2026</code></span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

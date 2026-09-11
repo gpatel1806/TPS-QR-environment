@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
-from app import Equipment, MaintenanceLog, app, db
+from app import Equipment, MaintenanceLog, User, app, db
 
+# Initial Equipment Records
 initial_equipment = [
     Equipment(
         id="EQ-00001",
@@ -53,6 +54,16 @@ with app.app_context():
     db.drop_all()
     db.create_all()
 
+    print("Seeding administrative engineer accounts...")
+    admin_user = User(
+        username="lead_engineer",
+        full_name="Chief Electrical Supervisor",
+        role="Administrator"
+    )
+    admin_user.set_password("Substation@2026")
+    db.session.add(admin_user)
+    db.session.commit()
+
     print("Seeding industrial equipment...")
     db.session.add_all(initial_equipment)
     db.session.commit()
@@ -95,4 +106,4 @@ with app.app_context():
     db.session.add_all(sample_logs)
     db.session.commit()
 
-    print("Success: Relational schema and initial log records synchronized.")
+    print("Success: Database reset, admin account provisioned, and sample data injected.")
