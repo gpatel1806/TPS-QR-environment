@@ -1,5 +1,5 @@
 import os
-from flask import Flask, abort, render_template, request
+from flask import Flask, abort, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -72,6 +72,48 @@ def home():
 def health_status():
     return "Status: OK | Database: SQLite Connected"
 
+@app.route("/equipment/new", methods=["GET", "POST"])
+def create_equipment():
+    error_message = None
+
+    if request.method == "POST":
+        # Extract inputs from HTTP form submission
+        eq_id = request.form.get("id", "").strip().upper()
+        name = request.form.get("name", "").strip()
+        tag = request.form.get("tag", "").strip().upper()
+        area = request.form.get("area", "").strip()
+        rating = request.form.get("rating", "").strip()
+        voltage = request.form.get("voltage", "").strip()
+        status = request.form.get("status", "").strip()
+        commission_date = request.form.get("commission_date", "").strip()
+        ppe_required = request.form.get("ppe_required", "").strip()
+
+        # Check for existing primary key or tag collision
+        existing_id = Equipment.query.get(eq_id)
+        existing_tag = Equipment.query.filter_by(tag=tag).first()
+
+        if existing_id:
+            error_message = f"Asset ID '{eq_id}' is already registered in the system."
+        elif existing_tag:
+            error_message = f"Plant Tag '{tag}' is already assigned to another unit."
+        else:
+            # Instantiate model and commit transaction
+            new_asset = Equipment(
+                id=eq_id,
+                name=name,
+                tag=tag,
+                area=area,
+                rating=rating,
+                voltage=voltage,
+                status=status,
+                commission_date=commission_date,
+                ppe_required=ppe_required
+            )
+            db.session.add(new_asset)
+            db.session.commit()
+            return redirect(url_for("home"))
+
+    return render_template("new_equipment.html", error_message=error_message)
 
 @app.route("/equipment/<equipment_id>")
 def get_equipment(equipment_id):

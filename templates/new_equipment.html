@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}
+Commission New Asset | Plant Ops
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10 col-12">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-plus-circle me-2"></i>Commission New Equipment</h5>
+                <span class="small text-white-50">Register an asset into the active plant database</span>
+            </div>
+
+            <div class="card-body p-4">
+                {% if error_message %}
+                <div class="alert alert-danger d-flex align-items-center mb-3">
+                    <i class="bi bi-exclamation-octagon-fill fs-4 me-2"></i>
+                    <div>{{ error_message }}</div>
+                </div>
+                {% endif %}
+
+                <form method="POST" action="/equipment/new">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Asset ID (Unique Code)</label>
+                            <input type="text" name="id" class="form-control" placeholder="e.g. EQ-00005" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Plant Single Line Tag</label>
+                            <input type="text" name="tag" class="form-control" placeholder="e.g. 33kV-BUS-COUPLER-01" required>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-secondary">Equipment Name</label>
+                            <input type="text" name="name" class="form-control" placeholder="e.g. Bus Coupler VCB Panel" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Physical Area / Bay</label>
+                            <input type="text" name="area" class="form-control" placeholder="e.g. Substation Switchgear Room" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Commissioning Date</label>
+                            <input type="date" name="commission_date" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Engineering Rating</label>
+                            <input type="text" name="rating" class="form-control" placeholder="e.g. 2000 A / 31.5 kA" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Operating Voltage</label>
+                            <input type="text" name="voltage" class="form-control" placeholder="e.g. 33 kV" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Initial Operational Status</label>
+                            <select name="status" class="form-select" required>
+                                <option value="In Service">In Service</option>
+                                <option value="Standby">Standby</option>
+                                <option value="Under Maintenance">Under Maintenance</option>
+                                <option value="Breakdown">Breakdown</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-secondary">Mandatory PPE (Comma-separated)</label>
+                            <input type="text" name="ppe_required" class="form-control" placeholder="e.g. Safety Helmet, Dielectric Shoes, Safety Glasses" required>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-4 pt-2 border-top">
+                        <a href="/" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                        <button type="submit" class="btn btn-primary fw-semibold px-4">
+                            <i class="bi bi-check2-circle me-1"></i> Register Asset
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
