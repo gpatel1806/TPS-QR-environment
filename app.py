@@ -1,5 +1,7 @@
+import io
 import os
-from flask import Flask, abort, render_template, request, redirect, url_for
+import qrcode
+from flask import Flask, abort, redirect, render_template, request, send_file, url_for
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -155,6 +157,34 @@ def get_equipment(equipment_id):
         "equipment.html", equipment_id=equipment.id, equipment=equipment
     )
 
+@app.route("/equipment/<equipment_id>/qr")
+def equipment_qr(equipment_id):
+    # Verify equipment exists in database first
+    equipment = Equipment.query.get_or_404(equipment_id)
+
+    # Construct the absolute URL to the equipment detail page
+    # _external=True generates 'http://127.0.0.1:5000/equipment/EQ-00001' instead of a relative path
+    target_url = url_for("get_equipment", equipment_id=equipment.id, _external=True)
+
+    # Generate QR Code Matrix
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,  # Standard 15% error recovery for plant tags
+        box_size=10,
+        border=2,
+    )
+    qr.add_data(target_url)
+    qr.make(fit=True)
+
+    # Render image using Pillow
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    # Write image to an in-memory byte stream (no disk write)
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    return send_file(buffer, mimetype="image/png")
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)

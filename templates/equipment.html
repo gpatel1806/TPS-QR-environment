@@ -41,9 +41,21 @@
                     </div>
                 </div>
             </div>
-            <div class="card-body py-2 px-3 bg-white border-bottom">
-                <h5 class="fw-bold mb-0 text-dark">{{ equipment.name }}</h5>
-                <span class="text-muted small">Location: {{ equipment.area }} | Tag: <code>{{ equipment.tag }}</code></span>
+            <div class="card-body py-3 px-3 bg-white border-bottom">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div>
+                        <h5 class="fw-bold mb-1 text-dark">{{ equipment.name }}</h5>
+                        <span class="text-muted small d-block mb-1">Location: {{ equipment.area }} | Tag: <code>{{ equipment.tag }}</code></span>
+                        <span class="text-muted small">Commissioned: {{ equipment.commission_date }}</span>
+                    </div>
+                    <div class="text-center p-2 bg-light border rounded">
+                        <img src="{{ url_for('equipment_qr', equipment_id=equipment.id) }}" 
+                             alt="QR for {{ equipment.id }}" 
+                             style="width: 90px; height: 90px; display: block;" 
+                             class="img-fluid">
+                        <span class="small text-muted fw-bold" style="font-size: 10px;">SCAN FOR TELEMETRY</span>
+                    </div>
+                </div>
             </div>
         </div>
 
