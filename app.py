@@ -157,6 +157,12 @@ def get_equipment(equipment_id):
         "equipment.html", equipment_id=equipment.id, equipment=equipment
     )
 
+@app.route("/equipment/print-tags")
+def print_tags():
+    # Fetch all equipment assets ordered by Asset ID
+    equipments = Equipment.query.order_by(Equipment.id).all()
+    return render_template("print_tags.html", equipments=equipments)
+
 @app.route("/equipment/<equipment_id>/qr")
 def equipment_qr(equipment_id):
     # Verify equipment exists in database first
