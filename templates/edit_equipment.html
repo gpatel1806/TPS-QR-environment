@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}
+Edit {{ equipment.name }} | Plant Ops
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10 col-12">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-pencil-square me-2"></i>Update Asset Record</h5>
+                    <span class="small text-white-50">Modify operational parameters or ratings</span>
+                </div>
+                <div class="asset-tag-plate">{{ equipment.id }}</div>
+            </div>
+
+            <div class="card-body p-4">
+                <form method="POST" action="/equipment/{{ equipment.id }}/edit">
+                    <div class="row g-3">
+                        <!-- Asset ID (Read-only / Immutable) -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Asset ID (Permanent)</label>
+                            <input type="text" class="form-control bg-light" value="{{ equipment.id }}" disabled>
+                            <div class="form-text small">Primary key cannot be modified after commissioning.</div>
+                        </div>
+
+                        <!-- Plant Tag -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Plant Single Line Tag</label>
+                            <input type="text" name="tag" class="form-control" value="{{ equipment.tag }}" required>
+                        </div>
+
+                        <!-- Equipment Name -->
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-secondary">Equipment Name</label>
+                            <input type="text" name="name" class="form-control" value="{{ equipment.name }}" required>
+                        </div>
+
+                        <!-- Area -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Physical Area / Bay</label>
+                            <input type="text" name="area" class="form-control" value="{{ equipment.area }}" required>
+                        </div>
+
+                        <!-- Commission Date -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Commissioning Date</label>
+                            <input type="date" name="commission_date" class="form-control" value="{{ equipment.commission_date }}" required>
+                        </div>
+
+                        <!-- Engineering Rating -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Engineering Rating</label>
+                            <input type="text" name="rating" class="form-control" value="{{ equipment.rating }}" required>
+                        </div>
+
+                        <!-- Operating Voltage -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Operating Voltage</label>
+                            <input type="text" name="voltage" class="form-control" value="{{ equipment.voltage }}" required>
+                        </div>
+
+                        <!-- Operational Status -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Operational Status</label>
+                            <select name="status" class="form-select" required>
+                                <option value="In Service" {% if equipment.status == "In Service" %}selected{% endif %}>In Service</option>
+                                <option value="Standby" {% if equipment.status == "Standby" %}selected{% endif %}>Standby</option>
+                                <option value="Under Maintenance" {% if equipment.status == "Under Maintenance" %}selected{% endif %}>Under Maintenance</option>
+                                <option value="Breakdown" {% if equipment.status == "Breakdown" %}selected{% endif %}>Breakdown / Tripped</option>
+                            </select>
+                        </div>
+
+                        <!-- Mandatory PPE -->
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-secondary">Mandatory PPE (Comma-separated)</label>
+                            <input type="text" name="ppe_required" class="form-control" value="{{ equipment.ppe_required }}" required>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-4 pt-2 border-top">
+                        <a href="/equipment/{{ equipment.id }}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                        <button type="submit" class="btn btn-warning fw-semibold px-4">
+                            <i class="bi bi-save me-1"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

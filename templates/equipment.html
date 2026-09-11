@@ -173,15 +173,19 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="d-flex justify-content-between align-items-center mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-2">
             <a href="/" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-arrow-left me-1"></i> Back to Directory
             </a>
-            <button class="btn btn-success btn-sm" onclick="window.print()">
-                <i class="bi bi-printer me-1"></i> Print Asset Tag
-            </button>
+            <div class="d-flex gap-2">
+                <a href="/equipment/{{ equipment.id }}/edit" class="btn btn-outline-dark btn-sm">
+                    <i class="bi bi-pencil me-1"></i> Edit Asset
+                </a>
+                <button class="btn btn-success btn-sm" onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i> Print Asset Tag
+                </button>
+            </div>
         </div>
-
     </div>
 </div>
 {% endblock %}

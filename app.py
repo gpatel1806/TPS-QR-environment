@@ -115,6 +115,27 @@ def create_equipment():
 
     return render_template("new_equipment.html", error_message=error_message)
 
+@app.route("/equipment/<equipment_id>/edit", methods=["GET", "POST"])
+def edit_equipment(equipment_id):
+    equipment = Equipment.query.get_or_404(equipment_id)
+
+    if request.method == "POST":
+        # Mutate existing record fields with incoming form inputs
+        equipment.name = request.form.get("name", "").strip()
+        equipment.tag = request.form.get("tag", "").strip().upper()
+        equipment.area = request.form.get("area", "").strip()
+        equipment.rating = request.form.get("rating", "").strip()
+        equipment.voltage = request.form.get("voltage", "").strip()
+        equipment.status = request.form.get("status", "").strip()
+        equipment.commission_date = request.form.get("commission_date", "").strip()
+        equipment.ppe_required = request.form.get("ppe_required", "").strip()
+
+        # Commit update transaction
+        db.session.commit()
+        return redirect(url_for("get_equipment", equipment_id=equipment.id))
+
+    return render_template("edit_equipment.html", equipment=equipment)
+
 @app.route("/equipment/<equipment_id>")
 def get_equipment(equipment_id):
     # Query database using primary key; trips automatic 404 if record doesn't exist
