@@ -1,32 +1,54 @@
 from datetime import datetime
+from functools import wraps
 import io
 import os
 import zipfile
-import qrcode
-from flask import Flask, abort, redirect, render_template, request, send_file, url_for, flash
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
 
+from dotenv import load_dotenv
+import qrcode
+from flask import (
+    Flask,
+    abort,
+    flash,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    url_for,
+)
+from flask_login import (
+    LoginManager,
+    UserMixin,
+    current_user,
+    login_required,
+    login_user,
+    logout_user,
+)
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import check_password_hash, generate_password_hash
+
+# Load environment variables from .env
+load_dotenv()
 app = Flask(__name__)
 
-# Configure SQLite Database File Path
+# Dynamic Production / Staging Configuration
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
-    basedir, "equipment.db"
+app.config["SECRET_KEY"] = os.getenv(
+    "SECRET_KEY", "industrial-plant-secret-key-change-in-prod-9982"
+)
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
+    "DATABASE_URL", "sqlite:///" + os.path.join(basedir, "equipment.db")
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
 # Authentication Setup
-app.config["SECRET_KEY"] = "industrial-plant-secret-key-change-in-prod-9982"
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 login_manager.login_message = "Please authenticate with Engineering credentials to perform this action."
 login_manager.login_message_category = "warning"
-
 
 # Define the Equipment Model (Parent Table)
 class Equipment(db.Model):
@@ -348,5 +370,21 @@ def equipment_qr(equipment_id):
 
     return send_file(buffer, mimetype="image/png")
 
+@app.errorhandler(403)
+def forbidden_error(error):
+    return render_template("errors/403.html"), 403
+
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template("errors/404.html"), 404
+
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    return render_template("errors/500.html"), 500
+
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    debug_mode = os.getenv("FLASK_DEBUG", "0") == "1"
+    app.run(host="0.0.0.0", port=5000, debug=debug_mode)
