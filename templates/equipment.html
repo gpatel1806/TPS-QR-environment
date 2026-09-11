@@ -59,17 +59,17 @@
             </div>
         </div>
 
-        <!-- Navigation Tabs Bar -->
+       <!-- Navigation Tabs Bar -->
         <ul class="nav nav-tabs nav-fill bg-white rounded-top shadow-sm border-bottom-0" id="equipmentTab" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link fw-semibold text-primary" id="maint-tab" data-bs-toggle="tab" data-bs-target="#maint-pane" type="button" role="tab">
-                    <i class="bi bi-clipboard-pulse me-1"></i> History
-                    <span class="badge rounded-pill bg-secondary ms-1">{{ equipment.logs|length }}</span>
+                <button class="nav-link active fw-semibold text-primary" id="specs-tab" data-bs-toggle="tab" data-bs-target="#specs-pane" type="button" role="tab">
+                    <i class="bi bi-cpu me-1"></i> Specs
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link fw-semibold text-primary" id="safety-tab" data-bs-toggle="tab" data-bs-target="#safety-pane" type="button" role="tab">
                     <i class="bi bi-shield-check me-1"></i> Safety & PPE
+                    <span class="badge rounded-pill bg-warning text-dark ms-1">{{ equipment.get_ppe_list()|length }}</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -77,9 +77,12 @@
                     <i class="bi bi-folder2-open me-1"></i> Docs
                 </button>
             </li>
+            
+            </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link fw-semibold text-primary" id="maint-tab" data-bs-toggle="tab" data-bs-target="#maint-pane" type="button" role="tab">
                     <i class="bi bi-clipboard-pulse me-1"></i> History
+                    <span class="badge rounded-pill bg-secondary ms-1">{{ equipment.logs|length }}</span>
                 </button>
             </li>
         </ul>
@@ -158,11 +161,17 @@
                 </div>
             </div>
 
+            
             <!-- 4. Maintenance History Tab -->
             <div class="tab-pane fade" id="maint-pane" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="fw-bold text-secondary mb-0"><i class="bi bi-clock-history me-1"></i> Maintenance & Inspection Logs</h6>
-                    <span class="badge bg-secondary">{{ equipment.logs|length }} Recorded Events</span>
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <div>
+                        <h6 class="fw-bold text-secondary mb-0"><i class="bi bi-clock-history me-1"></i> Maintenance &amp; Inspection Logs</h6>
+                        <span class="badge bg-secondary">{{ equipment.logs|length }} Recorded Events</span>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#logMaintenanceModal">
+                        <i class="bi bi-plus-circle me-1"></i> Log Maintenance Action
+                    </button>
                 </div>
 
                 <div class="table-responsive">
@@ -233,4 +242,60 @@
         </div>
     </div>
 </div>
+
+<!-- Modal for Recording Maintenance Actions -->
+<div class="modal fade" id="logMaintenanceModal" tabindex="-1" aria-labelledby="logMaintenanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="modal-title fs-6 fw-bold mb-0" id="logMaintenanceModalLabel">
+                    <i class="bi bi-wrench-adjustable me-2"></i>Record Field Maintenance Event
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="/equipment/{{ equipment.id }}/log">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-secondary">Maintenance / Event Type</label>
+                        <select name="log_type" class="form-select" required>
+                            <option value="Routine PM">Routine Preventive Maintenance (PM)</option>
+                            <option value="Tripping Inspection">Tripping / Fault Diagnostic</option>
+                            <option value="Thermography Audit">Thermography / IR Scan</option>
+                            <option value="Breakdown Repair">Breakdown Repair &amp; Component Swap</option>
+                            <option value="Oil BDV Test">Oil Dielectric BDV Analysis</option>
+                            <option value="Calibration">Relay / Sensor Calibration</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-secondary">Technician / Lead Engineer</label>
+                        <input type="text" name="technician" class="form-control" placeholder="e.g., M. Davis (Protection Eng.)" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-secondary">Asset Operational Status After Work</label>
+                        <select name="status_after" class="form-select" required>
+                            <option value="In Service">In Service (Normal Energization)</option>
+                            <option value="Standby">Standby (Ready for Service)</option>
+                            <option value="Under Maintenance">Under Maintenance (Work In Progress)</option>
+                            <option value="Breakdown">Breakdown (Locked Out / Awaiting Spares)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-secondary">Action Taken &amp; Engineering Findings</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="Detail test values, replaced parts, or clearance readings..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm fw-semibold">
+                        <i class="bi bi-check2-circle me-1"></i> Submit &amp; Update Asset
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

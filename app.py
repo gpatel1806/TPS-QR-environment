@@ -165,6 +165,33 @@ def delete_equipment(equipment_id):
 
     return redirect(url_for("home"))
 
+@app.route("/equipment/<equipment_id>/log", methods=["POST"])
+def add_maintenance_log(equipment_id):
+    equipment = Equipment.query.get_or_404(equipment_id)
+
+    log_type = request.form.get("log_type", "").strip()
+    technician = request.form.get("technician", "").strip()
+    status_after = request.form.get("status_after", "").strip()
+    description = request.form.get("description", "").strip()
+
+    if log_type and technician and status_after and description:
+        # Create child relational log entry
+        new_log = MaintenanceLog(
+            equipment_id=equipment.id,
+            log_type=log_type,
+            technician=technician,
+            status_after=status_after,
+            description=description,
+            timestamp=datetime.utcnow()
+        )
+        db.session.add(new_log)
+
+        # Synchronize parent asset operational status
+        equipment.status = status_after
+        db.session.commit()
+
+    return redirect(url_for("get_equipment", equipment_id=equipment.id))
+
 @app.route("/equipment/<equipment_id>")
 def get_equipment(equipment_id):
     # Query database using primary key; trips automatic 404 if record doesn't exist
