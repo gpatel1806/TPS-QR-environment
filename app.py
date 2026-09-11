@@ -1,5 +1,6 @@
 import io
 import os
+import zipfile
 import qrcode
 from flask import Flask, abort, redirect, render_template, request, send_file, url_for
 from flask_sqlalchemy import SQLAlchemy
@@ -162,6 +163,50 @@ def print_tags():
     # Fetch all equipment assets ordered by Asset ID
     equipments = Equipment.query.order_by(Equipment.id).all()
     return render_template("print_tags.html", equipments=equipments)
+
+@app.route("/equipment/export-qr-zip")
+def export_qr_zip():
+    equipments = Equipment.query.order_by(Equipment.id).all()
+
+    # Create an in-memory byte buffer for the zip file
+    zip_buffer = io.BytesIO()
+
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for eq in equipments:
+            target_url = url_for("get_equipment", equipment_id=eq.id, _external=True)
+
+            # Generate individual QR
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_M,
+                box_size=10,
+                border=2,
+            )
+            qr.add_data(target_url)
+            qr.make(fit=True)
+            img = qr.make_image(fill_color="black", back_color="white")
+
+            # Save QR to a temporary image buffer
+            img_buffer = io.BytesIO()
+            img.save(img_buffer, format="PNG")
+            img_buffer.seek(0)
+
+            # Write file into zip archive with a clean naming convention
+            file_name = f"{eq.id}_{eq.tag.replace('/', '-')}.png"
+            zip_file.writestr(file_name, img_buffer.getvalue())
+
+    zip_buffer.seek(0)
+
+    return send_file(
+        zip_buffer,
+        mimetype="application/zip",
+        as_attachment=True,
+        download_name="plant_equipment_qr_bundle.zip"
+    )
+
+@app.route("/scanner")
+def scan_equipment():
+    return render_template("scanner.html")
 
 @app.route("/equipment/<equipment_id>/qr")
 def equipment_qr(equipment_id):
