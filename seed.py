@@ -1,6 +1,6 @@
-from app import Equipment, app, db
+from datetime import datetime, timedelta
+from app import Equipment, MaintenanceLog, app, db
 
-# Standard initial dataset
 initial_equipment = [
     Equipment(
         id="EQ-00001",
@@ -49,12 +49,50 @@ initial_equipment = [
 ]
 
 with app.app_context():
-    print("Dropping existing tables and creating fresh database...")
+    print("Dropping and recreating database tables with Foreign Key schemas...")
     db.drop_all()
     db.create_all()
 
-    print("Seeding industrial equipment data...")
+    print("Seeding industrial equipment...")
     db.session.add_all(initial_equipment)
     db.session.commit()
 
-    print("Success: equipment.db generated and populated.")
+    print("Seeding relational maintenance logs...")
+    sample_logs = [
+        MaintenanceLog(
+            equipment_id="EQ-00001",
+            timestamp=datetime.utcnow() - timedelta(days=60),
+            log_type="Quarterly PM",
+            description="Transformer oil dielectric breakdown voltage test measured at 68 kV. Silica gel breather inspected; charge normal.",
+            technician="R. Sharma (Senior Electrical Eng.)",
+            status_after="In Service",
+        ),
+        MaintenanceLog(
+            equipment_id="EQ-00001",
+            timestamp=datetime.utcnow() - timedelta(days=10),
+            log_type="Thermography Audit",
+            description="Infrared thermography scan on HV bushings (220kV side). Zero thermal anomalies detected; phase delta < 1.2°C.",
+            technician="A. Verma (Condition Monitoring)",
+            status_after="In Service",
+        ),
+        MaintenanceLog(
+            equipment_id="EQ-00002",
+            timestamp=datetime.utcnow() - timedelta(days=2),
+            log_type="Tripping Inspection",
+            description="Racked out breaker carriage for contact resistance measurement. Vacuum bottle integrity check passed.",
+            technician="S. Nair (Protection Eng.)",
+            status_after="Under Maintenance",
+        ),
+        MaintenanceLog(
+            equipment_id="EQ-00003",
+            timestamp=datetime.utcnow() - timedelta(hours=6),
+            log_type="Emergency Breakdown",
+            description="Motor bearing DE (Drive End) high vibration trip (> 7.1 mm/s RMS). Stator winding temperature logged at 112°C. Motor locked out.",
+            technician="D. Patel (Mechanical & Drive Lead)",
+            status_after="Breakdown",
+        ),
+    ]
+    db.session.add_all(sample_logs)
+    db.session.commit()
+
+    print("Success: Relational schema and initial log records synchronized.")

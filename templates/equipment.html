@@ -62,8 +62,9 @@
         <!-- Navigation Tabs Bar -->
         <ul class="nav nav-tabs nav-fill bg-white rounded-top shadow-sm border-bottom-0" id="equipmentTab" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active fw-semibold text-primary" id="specs-tab" data-bs-toggle="tab" data-bs-target="#specs-pane" type="button" role="tab">
-                    <i class="bi bi-cpu me-1"></i> Specs
+                <button class="nav-link fw-semibold text-primary" id="maint-tab" data-bs-toggle="tab" data-bs-target="#maint-pane" type="button" role="tab">
+                    <i class="bi bi-clipboard-pulse me-1"></i> History
+                    <span class="badge rounded-pill bg-secondary ms-1">{{ equipment.logs|length }}</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -157,26 +158,51 @@
                 </div>
             </div>
 
-            <!-- 4. Maintenance History Tab (Placeholder for Phase 9) -->
+            <!-- 4. Maintenance History Tab -->
             <div class="tab-pane fade" id="maint-pane" role="tabpanel">
-                <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-clock-history me-1"></i> Recent Inspection & PM Logs</h6>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-secondary mb-0"><i class="bi bi-clock-history me-1"></i> Maintenance & Inspection Logs</h6>
+                    <span class="badge bg-secondary">{{ equipment.logs|length }} Recorded Events</span>
+                </div>
+
                 <div class="table-responsive">
-                    <table class="table table-sm table-hover align-middle mb-0 small">
+                    <table class="table table-sm table-hover table-bordered align-middle mb-0 small">
                         <thead class="table-light">
                             <tr>
-                                <th>Date</th>
-                                <th>Type</th>
-                                <th>Action Taken</th>
-                                <th>Technician</th>
+                                <th style="width: 15%;">Timestamp (UTC)</th>
+                                <th style="width: 20%;">Log Type</th>
+                                <th style="width: 40%;">Description & Findings</th>
+                                <th style="width: 15%;">Field Technician</th>
+                                <th style="width: 10%;">Resulting Status</th>
                             </tr>
                         </thead>
                         <tbody>
+                            {% for log in equipment.logs|sort(attribute='timestamp', reverse=True) %}
                             <tr>
-                                <td>2026-08-15</td>
-                                <td><span class="badge bg-secondary">Quarterly PM</span></td>
-                                <td>Insulation resistance (Megger) & thermal imaging inspection. Passed.</td>
-                                <td>K. Singh</td>
+                                <td class="text-nowrap text-muted">{{ log.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ log.log_type }}</span></td>
+                                <td>{{ log.description }}</td>
+                                <td class="fw-semibold">{{ log.technician }}</td>
+                                <td>
+                                    {% if log.status_after == "In Service" %}
+                                        <span class="badge bg-success">In Service</span>
+                                    {% elif log.status_after == "Under Maintenance" %}
+                                        <span class="badge bg-warning text-dark">Maintenance</span>
+                                    {% elif log.status_after == "Breakdown" %}
+                                        <span class="badge bg-danger">Breakdown</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ log.status_after }}</span>
+                                    {% endif %}
+                                </td>
                             </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    <i class="bi bi-journal-x fs-3 d-block mb-1 text-secondary"></i>
+                                    No recorded maintenance actions for this asset.
+                                </td>
+                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>

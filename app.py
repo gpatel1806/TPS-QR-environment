@@ -1,3 +1,4 @@
+from datetime import datetime
 import io
 import os
 import zipfile
@@ -17,7 +18,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 
-# Define the Equipment Model (Database Table Schema)
+# Define the Equipment Model (Parent Table)
 class Equipment(db.Model):
     __tablename__ = "equipments"
 
@@ -29,15 +30,29 @@ class Equipment(db.Model):
     voltage = db.Column(db.String(50), nullable=False)
     status = db.Column(db.String(30), nullable=False, default="In Service")
     commission_date = db.Column(db.String(20), nullable=False)
-    ppe_required = db.Column(
-        db.String(255), nullable=False
-    )  # Stored as comma-separated values
+    ppe_required = db.Column(db.String(255), nullable=False)
+
+    # 1-to-Many Relationship: cascades deletions so orphaned logs are deleted if an asset is decommissioned
+    logs = db.relationship("MaintenanceLog", backref="equipment", cascade="all, delete-orphan", lazy=True)
 
     def get_ppe_list(self):
         """Helper to convert comma-separated string back to a clean list for templates."""
         if not self.ppe_required:
             return []
         return [item.strip() for item in self.ppe_required.split(",")]
+
+
+# Define the MaintenanceLog Model (Child Table)
+class MaintenanceLog(db.Model):
+    __tablename__ = "maintenance_logs"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    equipment_id = db.Column(db.String(20), db.ForeignKey("equipments.id"), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    log_type = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    technician = db.Column(db.String(100), nullable=False)
+    status_after = db.Column(db.String(30), nullable=False)
 
 
 @app.route("/")
