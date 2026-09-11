@@ -136,6 +136,17 @@ def edit_equipment(equipment_id):
 
     return render_template("edit_equipment.html", equipment=equipment)
 
+@app.route("/equipment/<equipment_id>/delete", methods=["POST"])
+def delete_equipment(equipment_id):
+    # Fetch equipment or trigger a 404 trip if not present
+    equipment = Equipment.query.get_or_404(equipment_id)
+
+    # Delete the record from SQLite
+    db.session.delete(equipment)
+    db.session.commit()
+
+    return redirect(url_for("home"))
+
 @app.route("/equipment/<equipment_id>")
 def get_equipment(equipment_id):
     # Query database using primary key; trips automatic 404 if record doesn't exist

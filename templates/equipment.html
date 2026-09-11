@@ -177,13 +177,20 @@
             <a href="/" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-arrow-left me-1"></i> Back to Directory
             </a>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 align-items-center">
                 <a href="/equipment/{{ equipment.id }}/edit" class="btn btn-outline-dark btn-sm">
                     <i class="bi bi-pencil me-1"></i> Edit Asset
                 </a>
                 <button class="btn btn-success btn-sm" onclick="window.print()">
                     <i class="bi bi-printer me-1"></i> Print Asset Tag
                 </button>
+
+                <!-- Decommission / Delete Form -->
+                <form method="POST" action="/equipment/{{ equipment.id }}/delete" onsubmit="return confirm('DANGER: Are you sure you want to decommission and permanently delete {{ equipment.id }} ({{ equipment.name }})? This action cannot be undone.');" class="d-inline mb-0">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-trash3 me-1"></i> Decommission
+                    </button>
+                </form>
             </div>
         </div>
     </div>
