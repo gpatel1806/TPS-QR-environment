@@ -36,9 +36,12 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 app.config["SECRET_KEY"] = os.getenv(
     "SECRET_KEY", "industrial-plant-secret-key-change-in-prod-9982"
 )
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
-    "DATABASE_URL", "sqlite:///" + os.path.join(basedir, "equipment.db")
-)
+database_url = os.getenv("DATABASE_URL", "sqlite:///" + os.path.join(basedir, "equipment.db"))
+# Fix SQLAlchemy dialect URI for PostgreSQL
+if database_url and database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
