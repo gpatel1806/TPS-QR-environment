@@ -48,12 +48,22 @@
                         <span class="text-muted small d-block mb-1">Location: {{ equipment.area }} | Tag: <code>{{ equipment.tag }}</code></span>
                         <span class="text-muted small">Commissioned: {{ equipment.commission_date }}</span>
                     </div>
-                    <div class="text-center p-2 bg-light border rounded">
-                        <img src="{{ url_for('equipment_qr', equipment_id=equipment.id) }}" 
-                             alt="QR for {{ equipment.id }}" 
-                             style="width: 90px; height: 90px; display: block;" 
-                             class="img-fluid">
-                        <span class="small text-muted fw-bold" style="font-size: 10px;">SCAN FOR TELEMETRY</span>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-dark btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-qr-code me-1"></i> Asset QR
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                            <li>
+                                <button class="dropdown-item small" type="button" data-bs-toggle="modal" data-bs-target="#qrViewModal">
+                                    <i class="bi bi-eye me-2"></i> View QR Code
+                                </button>
+                            </li>
+                            <li>
+                                <a class="dropdown-item small" href="{{ url_for('equipment_qr', equipment_id=equipment.id) }}" target="_blank">
+                                    <i class="bi bi-box-arrow-up-right me-2"></i> Open Image Link
+                                </a>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -305,6 +315,30 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+<!-- QR Code Viewer Modal -->
+<div class="modal fade" id="qrViewModal" tabindex="-1" aria-labelledby="qrViewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content text-center">
+            <div class="modal-header py-2">
+                <h6 class="modal-title fw-bold" id="qrViewModalLabel">Asset QR: {{ equipment.id }}</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <img src="{{ url_for('equipment_qr', equipment_id=equipment.id) }}" 
+                     alt="QR for {{ equipment.id }}" 
+                     class="img-fluid border p-2 bg-white rounded shadow-sm mb-2"
+                     style="max-width: 180px;">
+                <div class="small fw-bold text-dark">{{ equipment.tag }}</div>
+                <div class="text-muted" style="font-size: 11px;">Scan to open asset telemetry</div>
+            </div>
+            <div class="modal-footer py-2 justify-content-center">
+                <a href="{{ url_for('equipment_qr', equipment_id=equipment.id) }}" download="{{ equipment.id }}_QR.png" class="btn btn-sm btn-primary">
+                    <i class="bi bi-download me-1"></i> Download PNG
+                </a>
+            </div>
         </div>
     </div>
 </div>
