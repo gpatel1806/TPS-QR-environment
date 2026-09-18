@@ -5,6 +5,7 @@ import os
 import zipfile
 
 from dotenv import load_dotenv
+import pandas as pd  # <--- ADD THIS
 import qrcode
 from flask import (
     Flask,
@@ -54,28 +55,31 @@ login_manager.login_message = "Please authenticate with Engineering credentials 
 login_manager.login_message_category = "warning"
 
 # Define the Equipment Model (Parent Table)
+# Define the Equipment Model (Parent Table)
 class Equipment(db.Model):
-    __tablename__ = "equipments"
+    __tablename__ = 'equipments'
 
-    id = db.Column(db.String(20), primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
+    id = db.Column(db.String(50), primary_key=True)
     tag = db.Column(db.String(50), nullable=False, unique=True)
-    area = db.Column(db.String(50), nullable=False)
-    rating = db.Column(db.String(50), nullable=False)
-    voltage = db.Column(db.String(50), nullable=False)
-    status = db.Column(db.String(30), nullable=False, default="In Service")
-    commission_date = db.Column(db.String(20), nullable=False)
-    ppe_required = db.Column(db.String(255), nullable=False)
+    name = db.Column(db.String(150), nullable=False)
+    area = db.Column(db.String(100), nullable=False)
+    equipment_type = db.Column(db.String(50), nullable=False) 
+    category = db.Column(db.String(50), nullable=True)        
+    substation = db.Column(db.String(100), nullable=True)     
+    feeder = db.Column(db.String(100), nullable=True)         
+    rating = db.Column(db.String(50), nullable=True)          
+    status = db.Column(db.String(50), default='In Service')
+    specs = db.Column(db.Text, nullable=True)                 
 
-    # 1-to-Many Relationship: cascades deletions so orphaned logs are deleted if an asset is decommissioned
-    logs = db.relationship("MaintenanceLog", backref="equipment", cascade="all, delete-orphan", lazy=True)
-
+    # Relationships
+    logs = db.relationship('MaintenanceLog', backref='equipment', cascade='all, delete-orphan', lazy=True)
+    
     def get_ppe_list(self):
-        """Helper to convert comma-separated string back to a clean list for templates."""
-        if not self.ppe_required:
+        """Safe helper to convert optional PPE field or fallback to empty list."""
+        ppe = getattr(self, 'ppe_required', None)
+        if not ppe:
             return []
-        return [item.strip() for item in self.ppe_required.split(",")]
-
+        return [item.strip() for item in ppe.split(",") if item.strip()]
 
 # Define the MaintenanceLog Model (Child Table)
 class MaintenanceLog(db.Model):
@@ -172,24 +176,115 @@ def home():
 def health_status():
     return "Status: OK | Database: SQLite Connected"
 
+
+def derive_category(eq_type):
+    """Categorizes assets into the 4 plant dashboard groups."""
+    eq_type = str(eq_type).lower().strip()
+    if any(k in eq_type for k in ['breaker', 'ht breaker', 'lt module', 'transformer', 'battery', 'ups']):
+        return 'Electrical'
+    elif any(k in eq_type for k in ['pump', 'fan']):
+        return 'Mechanical'
+    elif any(k in eq_type for k in ['vessel', 'tank']):
+        return 'Process'
+    elif 'generator' in eq_type:
+        return 'Generation'
+    return 'Other'
+
+
+@app.route('/equipment/import-excel', methods=['GET', 'POST'])
+@login_required
+def import_excel():
+    if request.method == 'POST':
+        if 'excel_file' not in request.files:
+            flash('No file selected.', 'danger')
+            return redirect(request.url)
+            
+        file = request.files['excel_file']
+        if not file.filename.endswith(('.xlsx', '.xls')):
+            flash('Please upload a valid Excel spreadsheet (.xlsx or .xls).', 'danger')
+            return redirect(request.url)
+
+        try:
+            df = pd.read_excel(file)
+            df.columns = [str(c).strip().lower() for c in df.columns]
+
+            required_cols = {'equipment id', 'tag no', 'equipment type', 'name', 'area'}
+            if not required_cols.issubset(set(df.columns)):
+                flash(f"Missing required columns! File must include: {', '.join(required_cols)}", 'danger')
+                return redirect(request.url)
+
+            success_count = 0
+            updated_count = 0
+
+            for _, row in df.iterrows():
+                asset_id = str(row['equipment id']).strip()
+                if not asset_id or asset_id.lower() == 'nan':
+                    continue
+
+                eq_type = str(row.get('equipment type', '')).strip().lower()
+
+                eq = Equipment.query.get(asset_id)
+                if not eq:
+                    eq = Equipment(id=asset_id)
+                    db.session.add(eq)
+                    success_count += 1
+                else:
+                    updated_count += 1
+
+                eq.tag = str(row.get('tag no', '')).strip()
+                eq.name = str(row.get('name', '')).strip()
+                eq.area = str(row.get('area', '')).strip()
+                eq.equipment_type = eq_type
+                eq.category = derive_category(eq_type)
+
+                # Substation & Feeder mapping
+                if any(k in eq_type for k in ELECTRICAL_FED_TYPES):
+                    eq.substation = str(row['substation']).strip() if 'substation' in df.columns and pd.notna(row['substation']) else None
+                    eq.feeder = str(row['feeder']).strip() if 'feeder' in df.columns and pd.notna(row['feeder']) else None
+                else:
+                    eq.substation = None
+                    eq.feeder = None
+
+                # Rating and Additional Information mapping
+                eq.rating = str(row['rating']).strip() if 'rating' in df.columns and pd.notna(row['rating']) else None
+                
+                additional_info = None
+                if 'additional information' in df.columns and pd.notna(row['additional information']):
+                    additional_info = str(row['additional information']).strip()
+                elif 'specs' in df.columns and pd.notna(row['specs']):
+                    additional_info = str(row['specs']).strip()
+                eq.specs = additional_info
+
+            db.session.commit()
+            flash(f'Import complete: {success_count} assets created, {updated_count} updated.', 'success')
+            return redirect(url_for('index'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error importing file: {str(e)}', 'danger')
+            return redirect(request.url)
+
+    return render_template('import_excel.html')
+     
 @app.route("/equipment/new", methods=["GET", "POST"])
 @login_required
 def create_equipment():
     error_message = None
 
     if request.method == "POST":
-        # Extract inputs from HTTP form submission
         eq_id = request.form.get("id", "").strip().upper()
-        name = request.form.get("name", "").strip()
         tag = request.form.get("tag", "").strip().upper()
+        equipment_type = request.form.get("equipment_type", "").strip().lower()
+        name = request.form.get("name", "").strip()
         area = request.form.get("area", "").strip()
+        substation = request.form.get("substation", "").strip()
+        feeder = request.form.get("feeder", "").strip()
         rating = request.form.get("rating", "").strip()
-        voltage = request.form.get("voltage", "").strip()
-        status = request.form.get("status", "").strip()
-        commission_date = request.form.get("commission_date", "").strip()
-        ppe_required = request.form.get("ppe_required", "").strip()
+        specs = request.form.get("specs", "").strip()
+        status = request.form.get("status", "In Service").strip()
 
-        # Check for existing primary key or tag collision
+        category = derive_category(equipment_type)
+
         existing_id = Equipment.query.get(eq_id)
         existing_tag = Equipment.query.filter_by(tag=tag).first()
 
@@ -198,24 +293,26 @@ def create_equipment():
         elif existing_tag:
             error_message = f"Plant Tag '{tag}' is already assigned to another unit."
         else:
-            # Instantiate model and commit transaction
             new_asset = Equipment(
                 id=eq_id,
-                name=name,
                 tag=tag,
+                name=name,
                 area=area,
+                equipment_type=equipment_type,
+                category=category,
+                substation=substation if substation else None,
+                feeder=feeder if feeder else None,
                 rating=rating,
-                voltage=voltage,
-                status=status,
-                commission_date=commission_date,
-                ppe_required=ppe_required
+                specs=specs,
+                status=status
             )
             db.session.add(new_asset)
             db.session.commit()
+            flash(f"Asset {eq_id} commissioned successfully.", "success")
             return redirect(url_for("home"))
 
     return render_template("new_equipment.html", error_message=error_message)
-
+    
 
 
 @app.route("/equipment/<equipment_id>/edit", methods=["GET", "POST"])

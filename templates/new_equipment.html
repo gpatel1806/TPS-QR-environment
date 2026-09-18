@@ -21,41 +21,53 @@ Commission New Asset | Plant Ops
                 </div>
                 {% endif %}
 
-                <form method="POST" action="/equipment/new">
+               <form method="POST" action="/equipment/new">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-secondary">Asset ID (Unique Code)</label>
+                            <label class="form-label fw-bold small text-secondary">Equipment ID</label>
                             <input type="text" name="id" class="form-control" placeholder="e.g. EQ-00005" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-secondary">Plant Single Line Tag</label>
-                            <input type="text" name="tag" class="form-control" placeholder="e.g. 33kV-BUS-COUPLER-01" required>
+                            <label class="form-label fw-bold small text-secondary">Tag No</label>
+                            <input type="text" name="tag" class="form-control" placeholder="e.g. 33kV-BUS-COUPLER" required>
                         </div>
 
-                        <div class="col-12">
-                            <label class="form-label fw-bold small text-secondary">Equipment Name</label>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Equipment Type</label>
+                            <input type="text" name="equipment_type" class="form-control" placeholder="e.g. transformer, pump, breaker" required>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Name</label>
                             <input type="text" name="name" class="form-control" placeholder="e.g. Bus Coupler VCB Panel" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-secondary">Physical Area / Bay</label>
-                            <input type="text" name="area" class="form-control" placeholder="e.g. Substation Switchgear Room" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-secondary">Commissioning Date</label>
-                            <input type="date" name="commission_date" class="form-control" required>
+                            <label class="form-label fw-bold small text-secondary">Area</label>
+                            <input type="text" name="area" class="form-control" placeholder="e.g. Switchgear Room" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-secondary">Engineering Rating</label>
-                            <input type="text" name="rating" class="form-control" placeholder="e.g. 2000 A / 31.5 kA" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-secondary">Operating Voltage</label>
-                            <input type="text" name="voltage" class="form-control" placeholder="e.g. 33 kV" required>
+                            <label class="form-label fw-bold small text-secondary">Rating / Capacity</label>
+                            <input type="text" name="rating" class="form-control" placeholder="e.g. 1500 kVA or 630 kW">
                         </div>
 
                         <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Substation (If applicable)</label>
+                            <input type="text" name="substation" class="form-control" placeholder="e.g. Substation A">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Feeder (If applicable)</label>
+                            <input type="text" name="feeder" class="form-control" placeholder="e.g. Incomer 1">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-secondary">Additional Information</label>
+                            <textarea name="specs" class="form-control" rows="2" placeholder="Manufacturer, serial number, or extra specs..."></textarea>
+                        </div>
+
+                        <div class="col-12">
                             <label class="form-label fw-bold small text-secondary">Initial Operational Status</label>
                             <select name="status" class="form-select" required>
                                 <option value="In Service">In Service</option>
@@ -63,11 +75,6 @@ Commission New Asset | Plant Ops
                                 <option value="Under Maintenance">Under Maintenance</option>
                                 <option value="Breakdown">Breakdown</option>
                             </select>
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label fw-bold small text-secondary">Mandatory PPE (Comma-separated)</label>
-                            <input type="text" name="ppe_required" class="form-control" placeholder="e.g. Safety Helmet, Dielectric Shoes, Safety Glasses" required>
                         </div>
                     </div>
 

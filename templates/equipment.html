@@ -68,8 +68,7 @@
                 </div>
             </div>
         </div>
-
-       <!-- Navigation Tabs Bar -->
+<!-- Navigation Tabs Bar -->
         <ul class="nav nav-tabs nav-fill bg-white rounded-top shadow-sm border-bottom-0" id="equipmentTab" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active fw-semibold text-primary" id="specs-tab" data-bs-toggle="tab" data-bs-target="#specs-pane" type="button" role="tab">
@@ -78,16 +77,13 @@
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link fw-semibold text-primary" id="safety-tab" data-bs-toggle="tab" data-bs-target="#safety-pane" type="button" role="tab">
-                    <i class="bi bi-shield-check me-1"></i> Safety & PPE
-                    <span class="badge rounded-pill bg-warning text-dark ms-1">{{ equipment.get_ppe_list()|length }}</span>
+                    <i class="bi bi-shield-check me-1"></i> Safety Info
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link fw-semibold text-primary" id="docs-tab" data-bs-toggle="tab" data-bs-target="#docs-pane" type="button" role="tab">
                     <i class="bi bi-folder2-open me-1"></i> Docs
                 </button>
-            </li>
-            
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link fw-semibold text-primary" id="maint-tab" data-bs-toggle="tab" data-bs-target="#maint-pane" type="button" role="tab">
@@ -115,41 +111,45 @@
                                 <td>{{ equipment.area }}</td>
                             </tr>
                             <tr>
-                                <th class="text-secondary small text-uppercase">Operating Rating</th>
-                                <td>{{ equipment.rating }}</td>
+                                <th class="text-secondary small text-uppercase">Asset Category</th>
+                                <td>{{ equipment.category or 'N/A' }}</td>
                             </tr>
                             <tr>
-                                <th class="text-secondary small text-uppercase">Voltage Level</th>
-                                <td>{{ equipment.voltage }}</td>
+                                <th class="text-secondary small text-uppercase">Equipment Type</th>
+                                <td class="text-capitalize">{{ equipment.equipment_type or 'N/A' }}</td>
+                            </tr>
+                            {% if equipment.substation %}
+                            <tr>
+                                <th class="text-secondary small text-uppercase">Fed From Substation</th>
+                                <td>{{ equipment.substation }}</td>
                             </tr>
                             <tr>
-                                <th class="text-secondary small text-uppercase">Commissioning Date</th>
-                                <td>{{ equipment.commission_date }}</td>
+                                <th class="text-secondary small text-uppercase">Feeder ID</th>
+                                <td>{{ equipment.feeder or 'N/A' }}</td>
                             </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- 2. Safety & PPE Tab -->
+            <!-- 2. Safety & PPE Tab (Static Fallback) -->
             <div class="tab-pane fade" id="safety-pane" role="tabpanel">
-                <button
-                <span class="badge rounded-pill bg-warning text-dark ms-1">{{ equipment.get_ppe_list()|length }}</span>
-                </button>
                 <div class="alert alert-warning border-warning d-flex align-items-center mb-3">
                     <i class="bi bi-shield-exclamation fs-4 me-2"></i>
-                    <span class="small fw-semibold">Standard safe isolation procedures and arc-flash boundaries must be observed.</span>
+                    <span class="small fw-semibold">Standard safe isolation procedures and arc-flash boundaries must be observed prior to maintenance.</span>
                 </div>
-                <h6 class="fw-bold text-secondary mb-2">Mandatory Personal Protective Equipment (PPE):</h6>
+                <h6 class="fw-bold text-secondary mb-2">Standard PPE Requirements:</h6>
                 <ul class="list-group list-group-flush border rounded">
-                    {% for ppe in equipment.get_ppe_list() %}
-                        <li class="list-group-item small d-flex align-items-center">
-                            <i class="bi bi-check2-square text-success me-2 fs-6"></i> {{ ppe }}
-                        </li>
-                    {% endfor %}
+                    <li class="list-group-item small d-flex align-items-center">
+                        <i class="bi bi-check2-square text-success me-2 fs-6"></i> Plant Safety Helmet & Safety Shoes
+                    </li>
+                    <li class="list-group-item small d-flex align-items-center">
+                        <i class="bi bi-check2-square text-success me-2 fs-6"></i> High-Visibility Vest
+                    </li>
                 </ul>
             </div>
-
+            
             <!-- 3. Documents & Schematics Tab (Placeholder for Phase 6) -->
             <div class="tab-pane fade" id="docs-pane" role="tabpanel">
                 <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-file-earmark-pdf me-1"></i> Engineering Documents & Drawings</h6>

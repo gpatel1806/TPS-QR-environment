@@ -28,27 +28,36 @@
                 <a class="nav-link active" href="/"><i class="bi bi-card-list me-1"></i> Asset Directory</a>
                 <a class="nav-link text-warning fw-semibold" href="/scanner"><i class="bi bi-qr-code-scan me-1"></i> Scan Tag</a>
                 
-                
-                {% if current_user.is_authenticated %}
-                    <a class="btn btn-outline-warning btn-sm ms-2 text-uppercase fw-semibold" href="/equipment/new">
-                        <i class="bi bi-plus-lg me-1"></i> Add Asset
-                    </a>
-                    <div class="dropdown ms-2">
-                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-check-fill me-1"></i> {{ current_user.username }}
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                            <li><h6 class="dropdown-header">{{ current_user.full_name }}</h6></li>
-                            <li><span class="dropdown-item-text small text-muted">Role: {{ current_user.role }}</span></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger small" href="/logout"><i class="bi bi-box-arrow-right me-1"></i> Terminate Session</a></li>
-                        </ul>
-                    </div>
-                {% else %}
-                    <a class="btn btn-outline-light btn-sm ms-2" href="/login">
-                        <i class="bi bi-shield-lock me-1"></i> Engineer Login
-                    </a>
-                {% endif %}
+               {% if current_user.is_authenticated %}
+    <div class="dropdown ms-2">
+        <button class="btn btn-outline-warning btn-sm dropdown-toggle text-uppercase fw-semibold" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-plus-lg me-1"></i> Add Asset
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+            <li>
+                <a class="dropdown-item small" href="/equipment/new">
+                    <i class="bi bi-pencil-square me-2 text-warning"></i> Add Manually
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item small" href="/equipment/import-excel">
+                    <i class="bi bi-file-earmark-excel me-2 text-success"></i> Import Excel
+                </a>
+            </li>
+        </ul>
+    </div>
+    <div class="dropdown ms-2">
+        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-person-check-fill me-1"></i> {{ current_user.username }}
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+            <li><h6 class="dropdown-header">{{ current_user.full_name }}</h6></li>
+            <li><span class="dropdown-item-text small text-muted">Role: {{ current_user.role }}</span></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger small" href="/logout"><i class="bi bi-box-arrow-right me-1"></i> Terminate Session</a></li>
+        </ul>
+    </div>
+{% endif %}
             </div>
         </div>
     </nav>
