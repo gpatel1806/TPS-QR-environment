@@ -32,8 +32,14 @@ Edit {{ equipment.name }} | Plant Ops
                             <input type="text" name="tag" class="form-control" value="{{ equipment.tag }}" required>
                         </div>
 
+                        <!-- Equipment Type -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-secondary">Equipment Type</label>
+                            <input type="text" name="equipment_type" class="form-control" value="{{ equipment.equipment_type }}" required>
+                        </div>
+
                         <!-- Equipment Name -->
-                        <div class="col-12">
+                        <div class="col-md-6">
                             <label class="form-label fw-bold small text-secondary">Equipment Name</label>
                             <input type="text" name="name" class="form-control" value="{{ equipment.name }}" required>
                         </div>
@@ -44,26 +50,32 @@ Edit {{ equipment.name }} | Plant Ops
                             <input type="text" name="area" class="form-control" value="{{ equipment.area }}" required>
                         </div>
 
-                        <!-- Commission Date -->
+                        <!-- Rating / Capacity -->
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-secondary">Commissioning Date</label>
-                            <input type="date" name="commission_date" class="form-control" value="{{ equipment.commission_date }}" required>
+                            <label class="form-label fw-bold small text-secondary">Rating / Capacity</label>
+                            <input type="text" name="rating" class="form-control" value="{{ equipment.rating or '' }}">
                         </div>
 
-                        <!-- Engineering Rating -->
+                        <!-- Substation -->
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-secondary">Engineering Rating</label>
-                            <input type="text" name="rating" class="form-control" value="{{ equipment.rating }}" required>
+                            <label class="form-label fw-bold small text-secondary">Substation (If applicable)</label>
+                            <input type="text" name="substation" class="form-control" value="{{ equipment.substation or '' }}">
                         </div>
 
-                        <!-- Operating Voltage -->
+                        <!-- Feeder -->
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-secondary">Operating Voltage</label>
-                            <input type="text" name="voltage" class="form-control" value="{{ equipment.voltage }}" required>
+                            <label class="form-label fw-bold small text-secondary">Feeder (If applicable)</label>
+                            <input type="text" name="feeder" class="form-control" value="{{ equipment.feeder or '' }}">
+                        </div>
+
+                        <!-- Additional Information -->
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-secondary">Additional Information</label>
+                            <textarea name="specs" class="form-control" rows="2">{{ equipment.specs or '' }}</textarea>
                         </div>
 
                         <!-- Operational Status -->
-                        <div class="col-md-6">
+                        <div class="col-12">
                             <label class="form-label fw-bold small text-secondary">Operational Status</label>
                             <select name="status" class="form-select" required>
                                 <option value="In Service" {% if equipment.status == "In Service" %}selected{% endif %}>In Service</option>
@@ -71,12 +83,6 @@ Edit {{ equipment.name }} | Plant Ops
                                 <option value="Under Maintenance" {% if equipment.status == "Under Maintenance" %}selected{% endif %}>Under Maintenance</option>
                                 <option value="Breakdown" {% if equipment.status == "Breakdown" %}selected{% endif %}>Breakdown / Tripped</option>
                             </select>
-                        </div>
-
-                        <!-- Mandatory PPE -->
-                        <div class="col-12">
-                            <label class="form-label fw-bold small text-secondary">Mandatory PPE (Comma-separated)</label>
-                            <input type="text" name="ppe_required" class="form-control" value="{{ equipment.ppe_required }}" required>
                         </div>
                     </div>
 
