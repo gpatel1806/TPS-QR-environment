@@ -220,46 +220,59 @@ def import_excel():
 
             success_count = 0
             updated_count = 0
+            seen_tags = set()
 
-            for _, row in df.iterrows():
-                asset_id = str(row['equipment id']).strip()
-                if not asset_id or asset_id.lower() == 'nan':
-                    continue
+            # Suspend autoflush to prevent premature duplicate key violations
+            with db.session.no_autoflush:
+                for _, row in df.iterrows():
+                    asset_id = str(row['equipment id']).strip()
+                    if not asset_id or asset_id.lower() == 'nan':
+                        continue
 
-                eq_type = str(row.get('equipment type', '')).strip().lower()
+                    tag_value = str(row.get('tag no', '')).strip()
+                    
+                    # 1. Prevent crashes from duplicates within the Excel file itself
+                    if tag_value and tag_value in seen_tags:
+                        continue
+                        
+                    # 2. Check existing database constraints safely
+                    existing_tag = Equipment.query.filter_by(tag=tag_value).first()
+                    eq = Equipment.query.get(asset_id)
+                    
+                    # 3. If tag exists on a DIFFERENT asset, skip this row to avoid a crash
+                    if existing_tag and (not eq or existing_tag.id != eq.id):
+                        continue
+                        
+                    # Mark this tag as processed
+                    if tag_value:
+                        seen_tags.add(tag_value)
 
-                eq = Equipment.query.get(asset_id)
-                if not eq:
-                    eq = Equipment(id=asset_id)
-                    db.session.add(eq)
-                    success_count += 1
-                else:
-                    updated_count += 1
+                    eq_type = str(row.get('equipment type', '')).strip().lower()
 
-                eq.tag = str(row.get('tag no', '')).strip()
-                eq.name = str(row.get('name', '')).strip()
-                eq.area = str(row.get('area', '')).strip()
-                eq.equipment_type = eq_type
-                eq.category = derive_category(eq_type)
+                    if not eq:
+                        eq = Equipment(id=asset_id)
+                        db.session.add(eq)
+                        success_count += 1
+                    else:
+                        updated_count += 1
 
-                # Substation & Feeder mapping
-               # if any(k in eq_type for k in ELECTRICAL_FED_TYPES):
-                #    eq.substation = str(row['substation']).strip() if 'substation' in df.columns and pd.notna(row['substation']) else None
-                 #   eq.feeder = str(row['feeder']).strip() if 'feeder' in df.columns and pd.notna(row['feeder']) else None
-                #else:
-                 #   eq.substation = None
-                  #  eq.feeder = None
+                    eq.tag = tag_value
+                    eq.name = str(row.get('name', '')).strip()
+                    eq.area = str(row.get('area', '')).strip()
+                    eq.equipment_type = eq_type
+                    eq.category = derive_category(eq_type)
 
-                # Rating and Additional Information mapping
-                eq.rating = str(row['rating']).strip() if 'rating' in df.columns and pd.notna(row['rating']) else None
-                
-                additional_info = None
-                if 'additional information' in df.columns and pd.notna(row['additional information']):
-                    additional_info = str(row['additional information']).strip()
-                elif 'specs' in df.columns and pd.notna(row['specs']):
-                    additional_info = str(row['specs']).strip()
-                eq.specs = additional_info
+                    # Rating and Additional Information mapping
+                    eq.rating = str(row['rating']).strip() if 'rating' in df.columns and pd.notna(row['rating']) else None
+                    
+                    additional_info = None
+                    if 'additional information' in df.columns and pd.notna(row['additional information']):
+                        additional_info = str(row['additional information']).strip()
+                    elif 'specs' in df.columns and pd.notna(row['specs']):
+                        additional_info = str(row['specs']).strip()
+                    eq.specs = additional_info
 
+            # Commit all valid rows simultaneously
             db.session.commit()
             flash(f'Import complete: {success_count} assets created, {updated_count} updated.', 'success')
             return redirect(url_for('index'))
@@ -271,6 +284,53 @@ def import_excel():
 
     return render_template('import_excel.html')
      
+@app.route("/equipment/new", methods=["GET", "POST"])
+@login_required
+def create_equipment():
+    error_message = None
+
+    if request.method == "POST":
+        eq_id = request.form.get("id", "").strip().upper()
+        tag = request.form.get("tag", "").strip().upper()
+        equipment_type = request.form.get("equipment_type", "").strip().lower()
+        name = request.form.get("name", "").strip()
+        area = request.form.get("area", "").strip()
+        substation = request.form.get("substation", "").strip()
+        feeder = request.form.get("feeder", "").strip()
+        rating = request.form.get("rating", "").strip()
+        specs = request.form.get("specs", "").strip()
+        status = request.form.get("status", "In Service").strip()
+
+        category = derive_category(equipment_type)
+
+        existing_id = Equipment.query.get(eq_id)
+        existing_tag = Equipment.query.filter_by(tag=tag).first()
+
+        if existing_id:
+            error_message = f"Asset ID '{eq_id}' is already registered in the system."
+        elif existing_tag:
+            error_message = f"Plant Tag '{tag}' is already assigned to another unit."
+        else:
+            new_asset = Equipment(
+                id=eq_id,
+                tag=tag,
+                name=name,
+                area=area,
+                equipment_type=equipment_type,
+                category=category,
+                substation=substation if substation else None,
+                feeder=feeder if feeder else None,
+                rating=rating,
+                specs=specs,
+                status=status
+            )
+            db.session.add(new_asset)
+            db.session.commit()
+            flash(f"Asset {eq_id} commissioned successfully.", "success")
+            return redirect(url_for("home"))
+
+    return render_template("new_equipment.html", error_message=error_message)
+         
 @app.route("/equipment/new", methods=["GET", "POST"])
 @login_required
 def create_equipment():
