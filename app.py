@@ -243,9 +243,9 @@ def import_excel():
                 eq.category = derive_category(eq_type)
 
                 # Substation & Feeder mapping
-                if any(k in eq_type for k in ELECTRICAL_FED_TYPES):
-                    eq.substation = str(row['substation']).strip() if 'substation' in df.columns and pd.notna(row['substation']) else None
-                    eq.feeder = str(row['feeder']).strip() if 'feeder' in df.columns and pd.notna(row['feeder']) else None
+               # if any(k in eq_type for k in ELECTRICAL_FED_TYPES):
+                #    eq.substation = str(row['substation']).strip() if 'substation' in df.columns and pd.notna(row['substation']) else None
+                 #   eq.feeder = str(row['feeder']).strip() if 'feeder' in df.columns and pd.notna(row['feeder']) else None
                 else:
                     eq.substation = None
                     eq.feeder = None
