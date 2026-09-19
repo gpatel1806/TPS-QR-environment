@@ -330,54 +330,6 @@ def create_equipment():
             return redirect(url_for("home"))
 
     return render_template("new_equipment.html", error_message=error_message)
-         
-@app.route("/equipment/new", methods=["GET", "POST"])
-@login_required
-def create_equipment():
-    error_message = None
-
-    if request.method == "POST":
-        eq_id = request.form.get("id", "").strip().upper()
-        tag = request.form.get("tag", "").strip().upper()
-        equipment_type = request.form.get("equipment_type", "").strip().lower()
-        name = request.form.get("name", "").strip()
-        area = request.form.get("area", "").strip()
-        substation = request.form.get("substation", "").strip()
-        feeder = request.form.get("feeder", "").strip()
-        rating = request.form.get("rating", "").strip()
-        specs = request.form.get("specs", "").strip()
-        status = request.form.get("status", "In Service").strip()
-
-        category = derive_category(equipment_type)
-
-        existing_id = Equipment.query.get(eq_id)
-        existing_tag = Equipment.query.filter_by(tag=tag).first()
-
-        if existing_id:
-            error_message = f"Asset ID '{eq_id}' is already registered in the system."
-        elif existing_tag:
-            error_message = f"Plant Tag '{tag}' is already assigned to another unit."
-        else:
-            new_asset = Equipment(
-                id=eq_id,
-                tag=tag,
-                name=name,
-                area=area,
-                equipment_type=equipment_type,
-                category=category,
-                substation=substation if substation else None,
-                feeder=feeder if feeder else None,
-                rating=rating,
-                specs=specs,
-                status=status
-            )
-            db.session.add(new_asset)
-            db.session.commit()
-            flash(f"Asset {eq_id} commissioned successfully.", "success")
-            return redirect(url_for("home"))
-
-    return render_template("new_equipment.html", error_message=error_message)
-    
 
 
 @app.route("/equipment/<equipment_id>/edit", methods=["GET", "POST"])
