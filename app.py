@@ -246,9 +246,9 @@ def import_excel():
                # if any(k in eq_type for k in ELECTRICAL_FED_TYPES):
                 #    eq.substation = str(row['substation']).strip() if 'substation' in df.columns and pd.notna(row['substation']) else None
                  #   eq.feeder = str(row['feeder']).strip() if 'feeder' in df.columns and pd.notna(row['feeder']) else None
-                else:
-                    eq.substation = None
-                    eq.feeder = None
+                #else:
+                 #   eq.substation = None
+                  #  eq.feeder = None
 
                 # Rating and Additional Information mapping
                 eq.rating = str(row['rating']).strip() if 'rating' in df.columns and pd.notna(row['rating']) else None
