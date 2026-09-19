@@ -275,7 +275,7 @@ def import_excel():
             # Commit all valid rows simultaneously
             db.session.commit()
             flash(f'Import complete: {success_count} assets created, {updated_count} updated.', 'success')
-            return redirect(url_for('index'))
+            return redirect(url_for('home'))
 
         except Exception as e:
             db.session.rollback()
