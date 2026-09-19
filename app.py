@@ -1,6 +1,5 @@
 from datetime import datetime
 from functools import wraps
-import io
 import os
 import zipfile
 
@@ -38,6 +37,7 @@ app.config["SECRET_KEY"] = os.getenv(
     "SECRET_KEY", "industrial-plant-secret-key-change-in-prod-9982"
 )
 database_url = os.getenv("DATABASE_URL", "sqlite:///" + os.path.join(basedir, "equipment.db"))
+
 # Fix SQLAlchemy dialect URI for PostgreSQL
 if database_url and database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
@@ -46,8 +46,16 @@ app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
+
+# --- AUTO-CREATE TABLES ON STARTUP ---
+# This ensures PostgreSQL (or SQLite) builds the tables before the first request
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+    except Exception as e:
+        print(f"Database initialization error: {e}")
+
+        
 # Authentication Setup
 login_manager = LoginManager()
 login_manager.init_app(app)
