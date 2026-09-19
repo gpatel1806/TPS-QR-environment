@@ -49,13 +49,8 @@ db = SQLAlchemy(app)
 
 # --- AUTO-CREATE TABLES ON STARTUP ---
 # This ensures PostgreSQL (or SQLite) builds the tables before the first request
-with app.app_context():
-    try:
-        db.create_all()
-    except Exception as e:
-        print(f"Database initialization error: {e}")
 
-        
+
 # Authentication Setup
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -493,6 +488,14 @@ def not_found_error(error):
 def internal_error(error):
     db.session.rollback()
     return render_template("errors/500.html"), 500
+
+with app.app_context():
+    try:
+        db.create_all()
+        print("Tables successfully verified/created.")
+    except Exception as e:
+        print(f"Database initialization error: {e}")
+
 
 if __name__ == "__main__":
     debug_mode = os.getenv("FLASK_DEBUG", "0") == "1"
