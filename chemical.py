@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, render_template, send_file, url_for, redirect, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
-from app import db
+from db import db
 from datetime import datetime
 import smtplib
 from email.message import EmailMessage

@@ -27,7 +27,9 @@ from flask_login import (
 )
 
 from werkzeug.security import check_password_hash, generate_password_hash
-from flask_sqlalchemy import SQLAlchemy
+
+# --- NEW: Import the shared db object from db.py ---
+from db import db 
 import os
 from dotenv import load_dotenv
 
@@ -49,11 +51,10 @@ if database_url and database_url.startswith("postgres://"):
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# 1. CREATE AND INITIALIZE THE DB OBJECT HERE FIRST
-db = SQLAlchemy(app)
+# 1. BIND THE DB TO THE APP FIRST
+db.init_app(app)
 
-# 2. IMPORT THE BLUEPRINT AFTER DB IS CREATED
-# We moved this down here! Now when chemical.py runs 'from app import db', it will successfully find the 'db' we just created above.
+# 2. IMPORT THE BLUEPRINT AFTER DB IS BOUND
 from chemical import chemical_bp
 
 # 3. REGISTER THE BLUEPRINT
