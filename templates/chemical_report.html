@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Consumption Report: {{ chemical.name }}</h2>
+        <a href="/chemical/dashboard" class="btn btn-outline-secondary">⬅ Back to Dashboard</a>
+    </div>
+    <hr>
+    
+    <div class="card shadow-sm p-4 mb-4 bg-light border-0">
+        <div class="row text-center">
+            <div class="col-md-4">
+                <p class="mb-1 text-muted">Minimum Allowable Limit</p>
+                <h4 class="mb-0">{{ chemical.min_stock }}</h4>
+            </div>
+            <div class="col-md-4">
+                <p class="mb-1 text-muted">Observation Frequency</p>
+                <h4 class="mb-0 text-capitalize">{{ chemical.frequency }}</h4>
+            </div>
+            <div class="col-md-4">
+                <p class="mb-1 text-muted">Current Stock</p>
+                <h4 class="mb-0">{{ chemical.last_stock }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- Consumption Graph Section -->
+    <div class="card shadow-sm p-4 mb-4">
+        <h5 class="text-center">Consumption Pattern</h5>
+        <canvas id="consumptionChart" height="100"></canvas>
+    </div>
+
+    <h4>Consumption History</h4>
+    <div class="table-responsive mt-3">
+        <table class="table table-striped table-bordered align-middle shadow-sm">
+            <thead class="table-dark">
+                <tr>
+                    <th>Date & Time (UTC)</th>
+                    <th>Previous Stock</th>
+                    <th>Current Stock</th>
+                    <th>Consumption</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.date_logged.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ log.previous_stock }}</td>
+                    <td>{{ log.current_stock }}</td>
+                    <td class="fw-bold text-primary">{{ log.consumption }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center py-4 text-muted">
+                        No consumption logs recorded yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Extract data from backend variables safely
+    const rawLogs = [
+        {% for log in logs|reverse %}
+            { date: "{{ log.date_logged.strftime('%b %d') }}", consumption: {{ log.consumption }} },
+        {% endfor %}
+    ];
+
+    const labels = rawLogs.map(log => log.date);
+    const dataPoints = rawLogs.map(log => log.consumption);
+
+    const ctx = document.getElementById('consumptionChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Units Consumed',
+                data: dataPoints,
+                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+</script>
+{% endblock %}

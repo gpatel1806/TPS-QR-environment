@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Print Chemical House QR</title>
+    <style>
+        body { 
+            text-align: center; 
+            font-family: Arial, sans-serif; 
+            margin-top: 50px; 
+        }
+        .qr-container { 
+            display: inline-block; 
+            padding: 30px; 
+            border: 3px solid #333; 
+            border-radius: 15px; 
+            background-color: #fff;
+        }
+        .qr-container h2 { margin-bottom: 5px; }
+        .qr-container p { color: #555; margin-bottom: 20px; }
+        img { width: 350px; height: 350px; }
+        
+        .btn {
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            border-radius: 5px;
+            border: none;
+            color: white;
+        }
+        .btn-primary { background-color: #0d6efd; }
+        .btn-secondary { background-color: #6c757d; }
+        
+        /* This hides the buttons on the actual paper printout */
+        @media print {
+            .no-print { display: none !important; }
+            body { margin: 0; padding: 0; }
+            .qr-container { border: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="qr-container">
+        <h2>Chemical House</h2>
+        <p>Scan to update daily stock levels</p>
+        <!-- Calls the backend route that generates the PNG image -->
+        <img src="/chemical/house/qr/image" alt="Chemical House QR Code">
+    </div>
+    <br><br>
+    
+    <div class="no-print">
+        <button class="btn btn-primary" onclick="window.print()">🖨️ Print QR Code</button>
+        <button class="btn btn-secondary" onclick="window.history.back()">⬅ Back</button>
+    </div>
+</body>
+</html>

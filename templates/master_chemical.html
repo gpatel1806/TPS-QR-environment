@@ -1,0 +1,83 @@
+{% extends "base.html" %} 
+{% block content %}
+<div class="container mt-5">
+    <h2>Engineer Master Setup: Chemical Limits & Alerts</h2>
+    <hr>
+    
+    <div id="alertBox" class="alert d-none" role="alert"></div>
+
+    <div class="card shadow-sm p-4">
+        <form id="setupForm">
+            <div class="mb-3">
+                <label for="chemName" class="form-label fw-bold">Chemical Name</label>
+                 <input type="text" class="form-control" id="chemName" placeholder="e.g., C1 or Sulfuric Acid" required>
+                <small class="text-muted">Type an existing name to update its limits, or type a new name to add it to the system.</small>
+            </div>
+
+            <div class="mb-3">
+                <label for="minStock" class="form-label">Minimum Allowable Stock</label>
+                <input type="number" step="0.01" class="form-control" id="minStock" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="frequency" class="form-label">Observation Frequency</label>
+                <select class="form-select" id="frequency" required>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="fortnightly">Fortnightly</option>
+                    <option value="monthly">Monthly</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="emailList" class="form-label">Alert Mailing List (Comma-separated)</label>
+                <input type="text" class="form-control" id="emailList" placeholder="engineer@plant.com, manager@plant.com">
+                <small class="text-muted">These people will receive an email if stock drops below the minimum.</small>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">Save Configuration</button>
+                <!-- NEW ABORT/CANCEL BUTTON -->
+                <a href="/chemical/dashboard" class="btn btn-secondary ms-2">Cancel / Back to Dashboard</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('setupForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const payload = {
+        name: document.getElementById('chemName').value,
+        min_stock: document.getElementById('minStock').value,
+        frequency: document.getElementById('frequency').value,
+        emails: document.getElementById('emailList').value
+    };
+
+    fetch('/chemical/api/master/setup_chemical', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(data => {
+        const alertBox = document.getElementById('alertBox');
+        alertBox.classList.remove('d-none');
+        alertBox.className = "alert alert-success mt-3";
+        alertBox.innerText = data.message || "Setup saved successfully.";
+        
+        // Optional: Automatically return to dashboard after successful save
+        setTimeout(() => {
+            window.location.href = "/chemical/dashboard";
+        }, 1500);
+    })
+    .catch(error => {
+        const alertBox = document.getElementById('alertBox');
+        alertBox.classList.remove('d-none');
+        alertBox.className = "alert alert-danger mt-3";
+        alertBox.innerText = "Error saving setup.";
+    });
+});
+</script>
+{% endblock %}

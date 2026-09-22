@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5 d-flex justify-content-center">
+    <div class="card shadow-sm p-4" style="max-width: 400px; width: 100%;">
+        <h3 class="text-center mb-4">Chemical Master Login</h3>
+        
+        <!-- Direct Message Rendering -->
+        {% if login_prompt %}
+            <div class="alert alert-warning">{{ login_prompt }}</div>
+        {% endif %}
+        
+        {% if error_msg %}
+            <div class="alert alert-danger">{{ error_msg }}</div>
+        {% endif %}
+
+        <form method="POST" action="/chemical/login">
+            <div class="mb-3">
+                <label class="form-label fw-bold">Master ID</label>
+                <input type="text" name="username" class="form-control" required autofocus>
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-bold">Password</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 mb-2">Login to Master Portal</button>
+            <a href="/" class="btn btn-outline-secondary w-100">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

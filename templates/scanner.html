@@ -13,7 +13,7 @@ Optical QR Scanner | Plant Ops
                     <h5 class="mb-0 fw-bold"><i class="bi bi-qr-code-scan me-2"></i>Field Asset Scanner</h5>
                     <span class="small text-white-50">Point optical sensor at equipment tag</span>
                 </div>
-                <span class="badge bg-success">Camera Ready</span>
+                <span id="camera-badge" class="badge bg-secondary">Initializing</span>
             </div>
 
             <div class="card-body text-center p-3">
@@ -23,7 +23,7 @@ Optical QR Scanner | Plant Ops
 
                 <div class="mt-3">
                     <div id="scan-status" class="alert alert-secondary small mb-3">
-                        <i class="bi bi-camera-video me-1"></i> Requesting optical permissions...
+                        <i class="bi bi-camera-video me-1"></i> Requesting camera permissions...
                     </div>
                 </div>
 
@@ -31,7 +31,7 @@ Optical QR Scanner | Plant Ops
                     <a href="/" class="btn btn-outline-secondary btn-sm">
                         <i class="bi bi-arrow-left me-1"></i> Directory
                     </a>
-                    <button id="restart-btn" class="btn btn-outline-primary btn-sm" style="display: none;" onclick="startScanner()">
+                    <button id="restart-btn" class="btn btn-outline-primary btn-sm" style="display: none;" onclick="restartScanner()">
                         <i class="bi bi-arrow-clockwise me-1"></i> Scan Another Tag
                     </button>
                 </div>
@@ -44,45 +44,127 @@ Optical QR Scanner | Plant Ops
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
 <script>
-    let html5QrcodeScanner;
+    let html5QrCode = null;
+    let isScanning = false;
 
-    function onScanSuccess(decodedText, decodedResult) {
-        document.getElementById('scan-status').className = "alert alert-success small mb-3";
-        document.getElementById('scan-status').innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> Tag Detected: <strong>${decodedText}</strong>. Redirecting...`;
-        
-        // Stop scanning after successful read
-        html5QrcodeScanner.clear();
-
-        // Redirect immediately if URL matches current origin or navigate directly
-        setTimeout(() => {
-            window.location.href = decodedText;
-        }, 800);
+    function setStatus(message, bsClass, iconClass) {
+        const statusBox = document.getElementById('scan-status');
+        statusBox.className = `alert alert-${bsClass} small mb-3`;
+        statusBox.innerHTML = `<i class="bi bi-${iconClass} me-1"></i> ${message}`;
     }
 
-    function onScanFailure(error) {
-        // Continuous scanning state - no need to log every empty frame
+    function sanitizeAndResolveTarget(rawText) {
+        const text = rawText.trim();
+
+        // Case 1: Scanned direct asset ID, e.g. "EQ-00001"
+        if (/^[a-zA-Z0-9_\-]+$/.test(text)) {
+            return `/equipment/${encodeURIComponent(text)}`;
+        }
+
+        // Case 2: Full URL or relative path
+        try {
+            const parsedUrl = new URL(text, window.location.origin);
+            
+            // Security check: Must belong to this plant web app domain
+            if (parsedUrl.origin !== window.location.origin) {
+                return null;
+            }
+
+            // Must navigate to equipment paths
+            if (parsedUrl.pathname.startsWith('/equipment/')) {
+                return parsedUrl.pathname + parsedUrl.search;
+            }
+        } catch (e) {
+            return null;
+        }
+
+        return null;
+    }
+
+    function onScanSuccess(decodedText) {
+        const validPath = sanitizeAndResolveTarget(decodedText);
+
+        if (!validPath) {
+            setStatus(`Unrecognized plant QR code: "${decodedText}". Navigation blocked for security.`, 'warning', 'shield-exclamation');
+            document.getElementById('restart-btn').style.display = 'inline-block';
+            stopCamera();
+            return;
+        }
+
+        setStatus(`Asset Tag Detected. Redirecting to <strong>${validPath}</strong>...`, 'success', 'check-circle-fill');
+        
+        stopCamera().then(() => {
+            setTimeout(() => {
+                window.location.href = validPath;
+            }, 600);
+        });
+    }
+
+    function stopCamera() {
+        if (html5QrCode && isScanning) {
+            return html5QrCode.stop().then(() => {
+                isScanning = false;
+                document.getElementById('camera-badge').className = "badge bg-secondary";
+                document.getElementById('camera-badge').textContent = "Camera Standby";
+            }).catch(err => {
+                console.error("Error stopping camera:", err);
+            });
+        }
+        return Promise.resolve();
     }
 
     function startScanner() {
-        document.getElementById('scan-status').className = "alert alert-info small mb-3";
-        document.getElementById('scan-status').innerHTML = '<i class="bi bi-viewfinder me-1"></i> Align QR matrix inside guide box';
-        document.getElementById('restart-btn').style.display = 'none';
+        const badge = document.getElementById('camera-badge');
+        const restartBtn = document.getElementById('restart-btn');
+        restartBtn.style.display = 'none';
 
-        html5QrcodeScanner = new Html5QrcodeScanner(
-            "reader", 
-            { 
-                fps: 15, 
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0
-            },
-            /* verbose= */ false
-        );
-        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        if (!html5QrCode) {
+            html5QrCode = new Html5Qrcode("reader");
+        }
+
+        const config = {
+            fps: 15,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0
+        };
+
+        // Prefer rear camera on mobile devices
+        html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            onScanSuccess,
+            (/* ignore empty frames */) => {}
+        ).then(() => {
+            isScanning = true;
+            badge.className = "badge bg-success";
+            badge.textContent = "Camera Active";
+            setStatus('Align asset QR code inside the guide box.', 'info', 'viewfinder');
+        }).catch(err => {
+            badge.className = "badge bg-danger";
+            badge.textContent = "Camera Blocked";
+
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                setStatus('Camera access requires HTTPS or localhost. Please check server protocol.', 'danger', 'lock-fill');
+            } else {
+                setStatus(`Camera initialization error: ${err.message || err}. Please check device permissions.`, 'danger', 'exclamation-octagon-fill');
+            }
+            restartBtn.style.display = 'inline-block';
+        });
     }
 
-    // Initialize optical engine when DOM loads
+    function restartScanner() {
+        startScanner();
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
         startScanner();
+    });
+
+    // Clean up camera stream when user leaves page
+    window.addEventListener("beforeunload", () => {
+        if (html5QrCode && isScanning) {
+            html5QrCode.stop().catch(() => {});
+        }
     });
 </script>
 {% endblock %}

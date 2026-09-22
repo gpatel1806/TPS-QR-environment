@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Chemical Inventory Dashboard</h2>
+        <div>
+            <a href="/chemical/house/qr/print" class="btn btn-primary me-2">🖨️ Print House QR</a>
+            <a href="/chemical/setup" class="btn btn-outline-primary me-2">⚙️ Master Setup</a>
+            <a href="/chemical/logout" class="btn btn-danger">Log Out</a>
+        </div>
+    </div>
+    <hr>
+
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered align-middle shadow-sm">
+            <thead class="table-dark">
+                <tr>
+                    <th>Chemical Tag</th>
+                    <th>Frequency</th>
+                    <th>Min Limit</th>
+                    <th>Current Stock</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for chem in chemicals %}
+                <tr>
+                    <td class="fw-bold">{{ chem.name }}</td>
+                    <td class="text-capitalize">{{ chem.frequency }}</td>
+                    <td>{{ chem.min_stock }}</td>
+                    <td class="fw-bold">{{ chem.last_stock }}</td>
+                    <td>
+                        {% if chem.last_stock < chem.min_stock %}
+                            <span class="badge bg-danger fs-6">⚠️ Low Stock</span>
+                        {% else %}
+                            <span class="badge bg-success fs-6">OK</span>
+                        {% endif %}
+                    </td>
+                   <td>
+                        <a href="/chemical/report/{{ chem.id }}" class="btn btn-sm btn-info">View Report</a>
+    
+                    <!-- New Rename Form -->
+                      <form action="/chemical/rename/{{ chem.id }}" method="POST" class="d-inline" onsubmit="let nn = prompt('Enter new name for {{ chem.name }}:', '{{ chem.name }}'); if(nn && nn.trim() !== ''){ this.new_name.value = nn; return true; } return false;">
+                        <input type="hidden" name="new_name" value="">
+                         <button type="submit" class="btn btn-sm btn-warning">Rename</button>
+                     </form>
+    
+    <!-- Existing Delete Form -->
+    <form action="/chemical/delete/{{ chem.id }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete {{ chem.name }}? This will erase all its history.');">
+        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+    </form>
+</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">
+                        No chemicals configured yet. Go to Master Setup to add your first chemical.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

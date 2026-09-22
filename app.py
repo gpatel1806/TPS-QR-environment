@@ -5,7 +5,7 @@ import io
 import zipfile
 
 from dotenv import load_dotenv
-import pandas as pd  # <--- ADD THIS
+import pandas as pd  
 import qrcode
 from flask import (
     Flask,
@@ -25,8 +25,11 @@ from flask_login import (
     login_user,
     logout_user,
 )
-from flask_sqlalchemy import SQLAlchemy
+
 from werkzeug.security import check_password_hash, generate_password_hash
+from flask_sqlalchemy import SQLAlchemy
+import os
+from dotenv import load_dotenv
 
 # Load environment variables from .env
 load_dotenv()
@@ -46,11 +49,15 @@ if database_url and database_url.startswith("postgres://"):
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+# 1. CREATE AND INITIALIZE THE DB OBJECT HERE FIRST
 db = SQLAlchemy(app)
 
-# --- AUTO-CREATE TABLES ON STARTUP ---
-# This ensures PostgreSQL (or SQLite) builds the tables before the first request
+# 2. IMPORT THE BLUEPRINT AFTER DB IS CREATED
+# We moved this down here! Now when chemical.py runs 'from app import db', it will successfully find the 'db' we just created above.
+from chemical import chemical_bp
 
+# 3. REGISTER THE BLUEPRINT
+app.register_blueprint(chemical_bp, url_prefix='/chemical')
 
 # Authentication Setup
 login_manager = LoginManager()
@@ -59,7 +66,6 @@ login_manager.login_view = "login"
 login_manager.login_message = "Please authenticate with Engineering credentials to perform this action."
 login_manager.login_message_category = "warning"
 
-# Define the Equipment Model (Parent Table)
 # Define the Equipment Model (Parent Table)
 class Equipment(db.Model):
     __tablename__ = 'equipments'
@@ -113,6 +119,7 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -179,7 +186,7 @@ def home():
 
 @app.route("/health")
 def health_status():
-    return "Status: OK | Database: SQLite Connected"
+    return "Status: OK | Database: Connected"
 
 
 def derive_category(eq_type):
@@ -355,19 +362,17 @@ def edit_equipment(equipment_id):
     return render_template("edit_equipment.html", equipment=equipment)
 
 
-
 @app.route("/equipment/<equipment_id>/delete", methods=["POST"])
 @login_required
 def delete_equipment(equipment_id):
     # Fetch equipment or trigger a 404 trip if not present
     equipment = Equipment.query.get_or_404(equipment_id)
 
-    # Delete the record from SQLite
+    # Delete the record from the database
     db.session.delete(equipment)
     db.session.commit()
 
     return redirect(url_for("home"))
-
 
 
 @app.route("/equipment/<equipment_id>/log", methods=["POST"])
@@ -397,7 +402,6 @@ def add_maintenance_log(equipment_id):
         db.session.commit()
 
     return redirect(url_for("get_equipment", equipment_id=equipment.id))
-
 
 
 @app.route("/equipment/<equipment_id>")
@@ -463,24 +467,20 @@ def equipment_qr(equipment_id):
     # Verify equipment exists in database first
     equipment = Equipment.query.get_or_404(equipment_id)
 
-    # Construct the absolute URL to the equipment detail page
-    # _external=True generates 'http://127.0.0.1:5000/equipment/EQ-00001' instead of a relative path
     target_url = url_for("get_equipment", equipment_id=equipment.id, _external=True)
 
     # Generate QR Code Matrix
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_M,  # Standard 15% error recovery for plant tags
+        error_correction=qrcode.constants.ERROR_CORRECT_M, 
         box_size=10,
         border=2,
     )
     qr.add_data(target_url)
     qr.make(fit=True)
 
-    # Render image using Pillow
     img = qr.make_image(fill_color="black", back_color="white")
 
-    # Write image to an in-memory byte stream (no disk write)
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
     buffer.seek(0)
@@ -504,6 +504,7 @@ def internal_error(error):
 
 with app.app_context():
     try:
+        # This will now create tables for Equipment AND the new Chemical tables
         db.create_all()
         print("Tables successfully verified/created.")
     except Exception as e:

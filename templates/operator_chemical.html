@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Operator Entry: Chemical Stock</h2>
+    <hr>
+    
+    <div id="alertBox" class="alert d-none" role="alert"></div>
+
+    <div class="card shadow-sm p-4">
+        <h4 id="chemNameDisplay">Loading tank data...</h4>
+        <p class="text-muted"><strong>Previous Stock Level:</strong> <span id="prevStock">--</span></p>
+        
+        <form id="operatorForm" class="d-none">
+            <input type="hidden" id="chemNameInput">
+            <div class="mb-3 mt-4">
+                <label for="currentStock" class="form-label fw-bold">Enter Current Stock</label>
+                <input type="number" step="0.01" class="form-control form-control-lg" id="currentStock" required>
+            </div>
+            <button type="submit" class="btn btn-success btn-lg w-100">Log Stock</button>
+        </form>
+
+        <div id="resultBox" class="mt-4 d-none p-3 bg-light border rounded">
+            <h5>Consumption Result</h5>
+            <p class="fs-3 text-primary mb-0"><span id="consumptionValue"></span> units consumed.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+// The backend will pass the ID into this variable
+const chemId = "{{ chemical_id }}";
+
+// 1. Fetch initial data on page load (Simulates the QR code scan lookup)
+fetch(`/chemical/api/operator/scan/${chemId}`)
+    .then(response => {
+        if(!response.ok) throw new Error("Chemical not found");
+        return response.json();
+    })
+    .then(data => {
+        document.getElementById('chemNameDisplay').innerText = `Chemical: ${data.chemical_name}`;
+        document.getElementById('prevStock').innerText = data.previous_stock;
+        document.getElementById('chemNameInput').value = data.chemical_name;
+        document.getElementById('operatorForm').classList.remove('d-none');
+    })
+    .catch(error => {
+        const alertBox = document.getElementById('alertBox');
+        alertBox.className = "alert alert-danger";
+        alertBox.innerText = "Error: Chemical tank not found or not configured yet. Please contact Engineering.";
+        document.getElementById('chemNameDisplay').innerText = "Scan Error";
+    });
+
+// 2. Handle the operator submitting the new stock
+document.getElementById('operatorForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const payload = {
+        name: document.getElementById('chemNameInput').value,
+        current_stock: document.getElementById('currentStock').value
+    };
+
+    fetch('/chemical/api/operator/log_stock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Hide the form and show the consumption calculation
+        document.getElementById('operatorForm').classList.add('d-none');
+        const resultBox = document.getElementById('resultBox');
+        resultBox.classList.remove('d-none');
+        document.getElementById('consumptionValue').innerText = data.consumption;
+        
+        // Handle visual dashboard alerts for low stock
+        const alertBox = document.getElementById('alertBox');
+        if(data.alert_triggered) {
+            alertBox.className = "alert alert-danger mt-3 fw-bold";
+            alertBox.innerText = "⚠️ WARNING: Stock is below the minimum limit! An alert has been sent to the engineer.";
+        } else {
+            alertBox.className = "alert alert-success mt-3";
+            alertBox.innerText = "Stock logged successfully.";
+        }
+    })
+    .catch(error => console.error('Error:', error));
+});
+</script>
+{% endblock %}
