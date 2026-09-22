@@ -3,11 +3,12 @@ from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
 from db import db
 from datetime import datetime
+import os
 import smtplib
+import threading
 from email.message import EmailMessage
 import qrcode
 import io
-import os
 
 chemical_bp = Blueprint('chemical', __name__)
 #---db = SQLAlchemy()
@@ -67,6 +68,16 @@ def chemical_logout():
     return redirect(url_for('chemical.render_operator_house'))
 
 
+# --- ASYNC BACKGROUND WORKER ---
+def send_email_async(msg, sender_email, sender_password):
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+            print(f"Background email successfully sent to {msg['To']}")
+    except Exception as e:
+        print(f"Failed to send background email: {e}")
 
 # --- ALERT LOGIC ---
 def trigger_low_stock_alert(chem_name, current_stock, min_stock):
@@ -83,25 +94,15 @@ def trigger_low_stock_alert(chem_name, current_stock, min_stock):
                     
     msg['Subject'] = f"Low Stock Alert: {chem_name}"
     
-    # 1. Fetch credentials securely from environment variables
     sender_email = os.getenv('ALERT_EMAIL')
     sender_password = os.getenv('ALERT_EMAIL_PASSWORD')
     
     msg['From'] = sender_email
     msg['To'] = ", ".join(recipients)
     
-    try:
-        # 2. Update the SMTP server to Google's server
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
-            
-            # 3. Authenticate using the environment variables
-            server.login(sender_email, sender_password) 
-            
-            server.send_message(msg)
-            print(f"Alert email successfully sent for {chem_name}")
-    except Exception as e:
-        print(f"Failed to send email: {e}")
+    # Send the email in a background thread so the web page doesn't freeze
+    thread = threading.Thread(target=send_email_async, args=(msg, sender_email, sender_password))
+    thread.start()
 
 # --- SECURED MASTER ROUTES (Requires separate login) ---
 
