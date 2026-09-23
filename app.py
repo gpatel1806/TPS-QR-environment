@@ -57,11 +57,13 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # 1. BIND THE DB TO THE APP FIRST
 db.init_app(app)
 
-# 2. IMPORT THE BLUEPRINT AFTER DB IS BOUND
+# 2. IMPORT THE BLUEPRINTS AFTER DB IS BOUND
 from chemical import chemical_bp
+from dashboard import dashboard_bp
 
-# 3. REGISTER THE BLUEPRINT
+# 3. REGISTER THE BLUEPRINTS
 app.register_blueprint(chemical_bp, url_prefix='/chemical')
+app.register_blueprint(dashboard_bp)  # <-- THIS IS THE MISSING LINE
 
 # Authentication Setup
 login_manager = LoginManager()
@@ -73,6 +75,7 @@ login_manager.login_message_category = "warning"
 # Define the Equipment Model (Parent Table)
 class Equipment(db.Model):
     __tablename__ = 'equipments'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.String(50), primary_key=True)
     tag = db.Column(db.String(50), nullable=False, unique=True)
@@ -86,7 +89,7 @@ class Equipment(db.Model):
     status = db.Column(db.String(50), default='In Service')
     specs = db.Column(db.Text, nullable=True)                 
 
-    # Relationships
+  # Relationships
     logs = db.relationship('MaintenanceLog', backref='equipment', cascade='all, delete-orphan', lazy=True)
     
     def get_ppe_list(self):
@@ -95,10 +98,10 @@ class Equipment(db.Model):
         if not ppe:
             return []
         return [item.strip() for item in ppe.split(",") if item.strip()]
-
 # Define the MaintenanceLog Model (Child Table)
 class MaintenanceLog(db.Model):
     __tablename__ = "maintenance_logs"
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     equipment_id = db.Column(db.String(20), db.ForeignKey("equipments.id"), nullable=False)
@@ -111,6 +114,7 @@ class MaintenanceLog(db.Model):
 # Define User Model for Role-Based Plant Operations
 class User(UserMixin, db.Model):
     __tablename__ = "users"
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False)
@@ -127,6 +131,7 @@ class User(UserMixin, db.Model):
 
 class TransformerInspection(db.Model):
     __tablename__ = 'transformer_inspections'
+    __table_args__ = {'extend_existing': True}
     
     id = db.Column(db.Integer, primary_key=True)
     transformer_id = db.Column(db.String(50), nullable=False)
@@ -142,9 +147,29 @@ class TransformerInspection(db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+# --- NEW DASHBOARD ARCHITECTURE MODELS ---
+class SystemAlert(db.Model):
+    __tablename__ = 'system_alerts'
+    __table_args__ = {'extend_existing': True}
+    id = db.Column(db.Integer, primary_key=True)
+    module = db.Column(db.String(50), nullable=False)
+    severity = db.Column(db.String(20), nullable=False) # INFO, WARNING, CRITICAL
+    message = db.Column(db.String(255), nullable=False)
+    resolved = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class ActivityLog(db.Model):
+    __tablename__ = 'activity_logs'
+    __table_args__ = {'extend_existing': True}
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    module = db.Column(db.String(50), nullable=False)
+    action = db.Column(db.String(255), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -161,7 +186,7 @@ def login():
             login_user(user)
             flash(f"Access granted. Welcome, {user.full_name}.", "success")
             next_page = request.args.get("next")
-            return redirect(next_page or url_for("home"))
+            return redirect(next_page or url_for("dashboard.index"))           
         else:
             flash("Invalid credentials. Access rejected by substation security.", "danger")
 
@@ -173,7 +198,7 @@ def login():
 def logout():
     logout_user()
     flash("Session terminated safely.", "info")
-    return redirect(url_for("home"))
+    return redirect(url_for("dashboard.index"))
 
     from flask import Flask, render_template, request, jsonify
 
@@ -185,8 +210,8 @@ def transformer_inspection():
     return render_template('transformer_inspection.html')
 
 
-@app.route("/")
-def home():
+@app.route("/equipment-directory")
+def equipment_directory():
     search_query = request.args.get("q", "").strip().lower()
     status_filter = request.args.get("status", "").strip()
 
@@ -245,9 +270,37 @@ def save_inspection():
     )
     
     db.session.add(new_inspection)
+
+    # --- PHASE 4: AUTOMATIC ACTIVITY LOG & ALERT TRIGGER ---
+    user_id = current_user.id if current_user.is_authenticated else None
+    
+    # 1. Log the Inspection Activity
+    new_log = ActivityLog(
+        user_id=user_id,
+        module="Transformer",
+        action=f"Inspection submitted for {data.get('transformerId')} ({data.get('severity')})"
+    )
+    db.session.add(new_log)
+
+    # 2. Trigger Dashboard Alert if Corrective Action or High Severity
+    severity = data.get('severity', 'Normal')
+    corrective = data.get('correctiveActionRequired', 'No')
+    
+    if severity in ['Critical', 'Major'] or corrective == 'Yes':
+        alert_msg = data.get('correctiveAction', '').strip()
+        if not alert_msg:
+            alert_msg = f"Severe observation recorded ({severity})."
+            
+        new_alert = SystemAlert(
+            module="Transformer",
+            severity="CRITICAL" if severity == 'Critical' else "WARNING",
+            message=f"[{data.get('transformerId')}] {alert_msg}"
+        )
+        db.session.add(new_alert)
+
     db.session.commit()
     return jsonify({"message": "Inspection saved successfully"}), 201
-
+    
 # 3. Delete an inspection (Master Only)
 @app.route('/api/inspections/<int:id>', methods=['DELETE'])
 @login_required
@@ -357,7 +410,7 @@ def import_excel():
             # Commit all valid rows simultaneously
             db.session.commit()
             flash(f'Import complete: {success_count} assets created, {updated_count} updated.', 'success')
-            return redirect(url_for('home'))
+            return redirect(url_for('equipment_directory'))
 
         except Exception as e:
             db.session.rollback()
@@ -407,9 +460,16 @@ def create_equipment():
                 status=status
             )
             db.session.add(new_asset)
+            # Generate an Activity Log for the Dashboard
+            new_log = ActivityLog(
+                user_id=current_user.id if current_user.is_authenticated else None,
+                module="Equipment Directory",
+                action=f"Commissioned new asset: {eq_id} ({name})"
+            )
+            db.session.add(new_log)
             db.session.commit()
             flash(f"Asset {eq_id} commissioned successfully.", "success")
-            return redirect(url_for("home"))
+            return redirect(url_for("equipment_directory"))
 
     return render_template("new_equipment.html", error_message=error_message)
 
@@ -447,7 +507,7 @@ def delete_equipment(equipment_id):
     db.session.delete(equipment)
     db.session.commit()
 
-    return redirect(url_for("home"))
+    return redirect(url_for("equipment_directory"))
 
 
 @app.route("/equipment/<equipment_id>/log", methods=["POST"])

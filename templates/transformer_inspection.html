@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Transformer Inspection & Observation</title>
-  
+{% extends "base.html" %}
+
+{% block title %}Transformer Inspection | MRTPS{% endblock %}
+
+{% block head %}
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js CDN -->
@@ -19,14 +17,16 @@
     .badge-Major { background-color: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
     .badge-Critical { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 
-    /* NEW PRINT STYLES */
+    /* PRINT STYLES */
     @media print {
-      header, main { display: none !important; }
+      .navbar, .module-tabs, main > div:not(#print-section) { display: none !important; }
       #print-section { display: block !important; position: static; }
-      body { background-color: white; color: black; margin: 0; padding: 0; }
+      body { background-color: white !important; color: black !important; margin: 0; padding: 0; }
     }
   </style>
-</head>
+{% endblock %}
+
+{% block content %}
 <body class="bg-gray-100 text-gray-800 font-sans min-h-screen">
 
   <!-- SECTION: PRINTABLE REPORT -->
@@ -78,16 +78,16 @@
     </div>
   </div>
 
- <!-- Sticky Industrial Header -->
-  <header class="sticky top-0 z-50 bg-blue-900 text-white shadow-md">
+<!-- Module Navigation Tabs -->
+  <div class="module-tabs bg-blue-900 text-white shadow-sm rounded-lg mb-4 mt-2">
     <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
       <div class="flex items-center gap-2">
         <i data-lucide="zap" class="text-yellow-400"></i>
-        <h1 class="text-lg md:text-xl font-bold tracking-wide">TPS-QR <span class="font-normal text-blue-200">| Transformer Inspection</span></h1>
+        <h1 class="text-lg md:text-xl font-bold tracking-wide">Transformer Module</h1>
       </div>
       <nav class="flex gap-2 items-center">
         <button onclick="switchTab('dashboard')" id="tabBtn-dashboard" class="px-3 py-2 rounded flex items-center gap-1.5 text-sm bg-blue-800 transition">
-          <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span class="hidden sm:inline">Dashboard</span>
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span class="hidden sm:inline">Overview</span>
         </button>
         <button onclick="switchTab('form')" id="tabBtn-form" class="px-3 py-2 rounded flex items-center gap-1.5 text-sm hover:bg-blue-800/60 transition">
           <i data-lucide="clipboard-list" class="w-4 h-4"></i><span class="hidden sm:inline">New Inspection</span>
@@ -95,25 +95,9 @@
         <button onclick="switchTab('history')" id="tabBtn-history" class="px-3 py-2 rounded flex items-center gap-1.5 text-sm hover:bg-blue-800/60 transition">
           <i data-lucide="history" class="w-4 h-4"></i><span class="hidden sm:inline">History</span>
         </button>
-
-        <!-- Visual Divider -->
-        <div class="w-px h-6 bg-blue-700 mx-1"></div>
-
-        <!-- Authentication Buttons -->
-        {% if current_user.is_authenticated %}
-          <!-- Shows user's name on hover and red logout button -->
-          <a href="/logout" title="Logged in as: {{ current_user.username }}" class="px-3 py-2 rounded flex items-center gap-1.5 text-sm hover:bg-red-600/80 text-red-200 hover:text-white transition">
-            <i data-lucide="log-out" class="w-4 h-4"></i><span class="hidden sm:inline">Log Out</span>
-          </a>
-        {% else %}
-          <!-- Shows blue login button -->
-          <a href="/login" class="px-3 py-2 rounded flex items-center gap-1.5 text-sm bg-blue-700 hover:bg-blue-600 transition font-semibold shadow-sm border border-blue-600">
-            <i data-lucide="log-in" class="w-4 h-4"></i><span class="hidden sm:inline">Login</span>
-          </a>
-        {% endif %}
       </nav>
     </div>
-  </header>
+  </div>
 
   <main class="max-w-7xl mx-auto p-4 md:p-6">
 
@@ -1100,5 +1084,4 @@
       document.getElementById('detailsModal').classList.add('hidden');
     }
   </script>
-</body>
-</html>
+{% endblock %}

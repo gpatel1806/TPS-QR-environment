@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+{% block title %}
+MRTPS | Central Management Dashboard
+{% endblock %}
+
+{% block navbar %}
+<!-- Navbar intentionally removed for the Dashboard page -->
+{% endblock %}
+
+{% block content %}
+<!-- A. HEADER & QUICK ACTIONS -->
+<!-- A. HEADER & QUICK ACTIONS -->
+<div class="row align-items-center mb-4 mt-2 gy-3">
+    <!-- Title Section -->
+    <div class="col-lg-4 col-md-12">
+        <h3 class="fw-bold mb-0 text-dark"><i class="bi bi-grid-1x2-fill text-primary me-2"></i>TPS DASHBOARD</h3>
+        <span class="text-muted small">Mathura Refinery TPS Portal</span>
+    </div>
+    
+    <!-- Smart Global Search Bar -->
+    <div class="col-lg-5 col-md-8">
+        <form action="/search" method="GET" class="d-flex shadow-sm">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="q" class="form-control border-start-0" placeholder="Search ID, Tag, or Keyword..." required>
+                <button class="btn btn-primary fw-semibold" type="submit">Search</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Quick Action Buttons -->
+    <div class="col-lg-3 col-md-4 text-md-end">
+        <a href="/scanner" class="btn btn-warning fw-semibold shadow-sm"><i class="bi bi-qr-code-scan me-1"></i> Scan</a>
+        {% if current_user.is_authenticated %}
+        <a href="/equipment/new" class="btn btn-primary shadow-sm"><i class="bi bi-plus-lg me-1"></i> New</a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- B. MODULE NAVIGATION -->
+<h6 class="fw-bold text-secondary text-uppercase mb-3 border-bottom pb-2">Active Plant Modules</h6>
+<div class="row g-3 mb-4">
+    <div class="col-md-4 col-sm-6">
+        <a href="/equipment-directory" class="text-decoration-none">
+            <div class="card h-100 shadow-sm border-0 module-card hover-lift">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-diagram-3-fill display-5 text-primary mb-2"></i>
+                    <h5 class="fw-bold text-dark mb-0">Equipment Directory</h5>
+                    <span class="text-muted small">Master Asset Registry & QR</span>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4 col-sm-6">
+        <a href="/transformer-inspection" class="text-decoration-none">
+            <div class="card h-100 shadow-sm border-0 module-card hover-lift">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-lightning-charge-fill display-5 text-warning mb-2"></i>
+                    <h5 class="fw-bold text-dark mb-0">Transformers</h5>
+                    <span class="text-muted small">Inspection & Diagnostics</span>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4 col-sm-6">
+        <a href="/chemical/operator/house" class="text-decoration-none">
+            <div class="card h-100 shadow-sm border-0 module-card hover-lift">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-droplet-half display-5 text-info mb-2"></i>
+                    <h5 class="fw-bold text-dark mb-0">Chemical Stock</h5>
+                    <span class="text-muted small">Inventory & Consumption</span>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <!-- Future Expansion Modules -->
+    <div class="col-md-4 col-sm-6">
+        <div class="card h-100 shadow-sm border-0 bg-light opacity-75">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-thermometer-sun display-5 text-secondary mb-2"></i>
+                <h5 class="fw-bold text-secondary mb-0">Substation Ambience</h5>
+                <span class="badge bg-secondary mt-2">Coming Soon</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-sm-6">
+        <div class="card h-100 shadow-sm border-0 bg-light opacity-75">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-battery-charging display-5 text-secondary mb-2"></i>
+                <h5 class="fw-bold text-secondary mb-0">UPS & Battery Banks</h5>
+                <span class="badge bg-secondary mt-2">Coming Soon</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-sm-6">
+        <div class="card h-100 shadow-sm border-0 bg-light opacity-75">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-gear-wide-connected display-5 text-secondary mb-2"></i>
+                <h5 class="fw-bold text-secondary mb-0">DG Set Trials</h5>
+                <span class="badge bg-secondary mt-2">Coming Soon</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- C. PLANT HEALTH SUMMARY -->
+<h6 class="fw-bold text-secondary text-uppercase mb-3 border-bottom pb-2">Plant Health & Status</h6>
+<div class="row g-3 mb-4">
+    <!-- Equipment Health -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-activity text-success me-2"></i>Overall Equipment Health</h6>
+                <div class="d-flex justify-content-between text-center mb-3">
+                    <div>
+                        <h3 class="mb-0 fw-bold text-primary">{{ total_equipment }}</h3>
+                        <span class="text-muted small">Total Assets</span>
+                    </div>
+                    <div>
+                        <h3 class="mb-0 fw-bold text-success">{{ healthy_equipment }}</h3>
+                        <span class="text-muted small">In Service</span>
+                    </div>
+                    <div>
+                        <h3 class="mb-0 fw-bold text-warning">{{ maintenance_equipment }}</h3>
+                        <span class="text-muted small">Maintenance</span>
+                    </div>
+                    <div>
+                        <h3 class="mb-0 fw-bold text-danger">{{ critical_equipment }}</h3>
+                        <span class="text-muted small">Breakdown</span>
+                    </div>
+                </div>
+                <!-- Visual Status Bar -->
+                <div class="progress" style="height: 8px;">
+                    {% set health_pct = (healthy_equipment / total_equipment * 100) if total_equipment > 0 else 0 %}
+                    {% set maint_pct = (maintenance_equipment / total_equipment * 100) if total_equipment > 0 else 0 %}
+                    {% set crit_pct = (critical_equipment / total_equipment * 100) if total_equipment > 0 else 0 %}
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ health_pct }}%"></div>
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ maint_pct }}%"></div>
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ crit_pct }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chemical Health -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-funnel-fill text-info me-2"></i>Chemical Inventory Status</h6>
+                <div class="d-flex justify-content-around text-center mt-4">
+                    <div>
+                        <h2 class="mb-0 fw-bold text-dark">{{ total_chemicals }}</h2>
+                        <span class="text-muted small">Monitored Chemicals</span>
+                    </div>
+                    <div>
+                        {% if low_stock_chemicals > 0 %}
+                            <h2 class="mb-0 fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill fs-4 me-1"></i>{{ low_stock_chemicals }}</h2>
+                            <span class="text-danger fw-semibold small">Attention Required</span>
+                        {% else %}
+                            <h2 class="mb-0 fw-bold text-success"><i class="bi bi-check-circle-fill fs-4 me-1"></i>0</h2>
+                            <span class="text-success fw-semibold small">All Stocks Normal</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- D. ALERTS & RECENT ACTIVITY -->
+<div class="row g-4 mb-5">
+    <!-- Attention Required Section -->
+    <div class="col-lg-6">
+        <div class="card industrial-card h-100 border-top border-danger border-4">
+            <div class="card-header industrial-card-header d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold text-danger mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Attention Required</h6>
+                <span class="badge bg-danger rounded-pill">{{ active_alerts|length }}</span>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush rounded-bottom">
+                    {% for alert in active_alerts %}
+                    <li class="list-group-item alert-item px-4 py-3 d-flex justify-content-between align-items-center border-bottom-0 border-top">
+                        <div>
+                            <span class="badge {% if alert.severity == 'CRITICAL' %}bg-danger{% else %}bg-warning text-dark{% endif %} me-2 shadow-sm">{{ alert.severity }}</span>
+                            <span class="small fw-bold text-dark">{{ alert.message }}</span>
+                            <div class="text-muted mt-1" style="font-size: 12px;"><i class="bi bi-cpu me-1"></i>{{ alert.module }} &bull; <i class="bi bi-clock me-1"></i>{{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                        </div>
+                        {% if current_user.is_authenticated %}
+                        <form action="/alert/{{ alert.id }}/resolve" method="POST" class="m-0" onsubmit="return confirm('Clear this alert from the dashboard?');">
+                            <button type="submit" class="btn btn-sm btn-light text-success fw-bold border shadow-sm hover-resolve" title="Acknowledge & Resolve">
+                                <i class="bi bi-check2-all me-1"></i> Resolve
+                            </button>
+                        </form>
+                        {% endif %}
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-center py-5 text-muted small border-0 bg-transparent">
+                        <i class="bi bi-shield-check text-success display-6 d-block mb-2 opacity-75"></i>
+                        <span class="fw-medium text-success">All systems normal. No critical alerts.</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity Section -->
+    <div class="col-lg-6">
+        <div class="card industrial-card h-100">
+            <div class="card-header industrial-card-header">
+                <h6 class="fw-bold text-secondary mb-0"><i class="bi bi-activity me-2"></i>Recent System Activity</h6>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover align-middle mb-0 small activity-table">
+                    <tbody>
+                        {% for activity in recent_activities %}
+                        <tr>
+                            <td class="ps-4 text-muted fw-medium" style="width: 25%;">{{ activity.timestamp.strftime('%b %d, %H:%M') }}</td>
+                            <td><span class="badge bg-light text-secondary border px-2 py-1 shadow-sm">{{ activity.module }}</span></td>
+                            <td class="fw-semibold text-dark pe-4">{{ activity.action }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center py-5 text-muted border-0">
+                                <i class="bi bi-journal-x fs-3 d-block mb-2 text-secondary opacity-50"></i>
+                                No recent activity recorded.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Smooth Hover Logic for Module Cards */
+    .hover-lift { 
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+        border: 1px solid #e2e8f0 !important; 
+    }
+    .hover-lift:hover { 
+        transform: translateY(-4px); 
+        box-shadow: 0 12px 24px rgba(0,0,0,0.06) !important; 
+        border-color: #cbd5e1 !important;
+    }
+    .module-card { cursor: pointer; border-radius: 12px; background-color: #ffffff; }
+    
+    /* Premium Industrial Cards */
+    .industrial-card {
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        border: 1px solid #e2e8f0 !important;
+        overflow: hidden;
+    }
+    .industrial-card-header {
+        background-color: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 1.25rem 1.5rem;
+    }
+    
+    /* Alert Items Hover */
+    .alert-item { transition: background-color 0.2s ease; }
+    .alert-item:hover { background-color: #fef2f2; }
+    .hover-resolve:hover { background-color: #dcfce7 !important; border-color: #bbf7d0 !important; }
+    
+    /* Activity Table Polish */
+    .activity-table tbody tr { transition: background-color 0.2s ease; }
+    .activity-table tbody tr:hover { background-color: #f8fafc; }
+    .activity-table td { border-bottom-color: #f1f5f9; padding: 14px 0; }
+    .activity-table tr:last-child td { border-bottom: none; }
+</style>
+{% endblock %}

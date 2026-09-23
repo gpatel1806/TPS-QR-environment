@@ -198,23 +198,39 @@ def log_stock():
     data = request.json
     chemical = Chemical.query.filter_by(name=data['name']).first()
     if not chemical: return jsonify({"error": "Chemical not found"}), 404
+    
     current_stock = float(data['current_stock'])
     previous_stock = chemical.last_stock
     consumption = previous_stock - current_stock if previous_stock > 0 else 0
+    
+    # Update Stock
     new_log = StockLog(chemical_id=chemical.id, previous_stock=previous_stock, current_stock=current_stock, consumption=consumption)
     db.session.add(new_log)
     chemical.last_stock = current_stock
-    db.session.commit()
+    
+    # Log Activity to Dashboard
+    from app import ActivityLog, SystemAlert
+    activity = ActivityLog(module="Chemical Stock", action=f"Stock updated for {chemical.name} ({current_stock} units)")
+    db.session.add(activity)
+
+    # Handle Alerts
     alert_triggered = False
     if current_stock < chemical.min_stock:
         alert_triggered = True
         trigger_low_stock_alert(chemical.name, current_stock, chemical.min_stock)
+        
+        sys_alert = SystemAlert(module="Chemical Stock", severity="WARNING", message=f"Low Stock: {chemical.name} dropped to {current_stock}")
+        db.session.add(sys_alert)
+
+    db.session.commit()
     return jsonify({"chemical": chemical.name, "consumption": consumption, "alert_triggered": alert_triggered}), 200
 
 @chemical_bp.route('/api/operator/log_stock_bulk', methods=['POST'])
 def log_stock_bulk():
     data = request.json
     alerts_triggered = []
+    from app import ActivityLog, SystemAlert
+    
     for item in data.get('entries', []):
         if item['current_stock'] == "": continue
         chemical = Chemical.query.filter_by(name=item['name']).first()
@@ -222,12 +238,21 @@ def log_stock_bulk():
             current_stock = float(item['current_stock'])
             previous_stock = chemical.last_stock
             consumption = previous_stock - current_stock if previous_stock > 0 else 0
+            
             new_log = StockLog(chemical_id=chemical.id, previous_stock=previous_stock, current_stock=current_stock, consumption=consumption)
             db.session.add(new_log)
+            
+            activity = ActivityLog(module="Chemical Stock", action=f"Bulk stock updated for {chemical.name}")
+            db.session.add(activity)
+            
             chemical.last_stock = current_stock
             if current_stock < chemical.min_stock:
                 alerts_triggered.append(chemical.name)
                 trigger_low_stock_alert(chemical.name, current_stock, chemical.min_stock)
+                
+                sys_alert = SystemAlert(module="Chemical Stock", severity="WARNING", message=f"Low Stock: {chemical.name} dropped to {current_stock}")
+                db.session.add(sys_alert)
+                
     db.session.commit()
     return jsonify({"message": "Stock logged successfully.", "alerts": alerts_triggered}), 200
 
