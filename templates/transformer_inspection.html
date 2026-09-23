@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transformer Inspection & Observation</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    .badge-Normal { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .badge-Minor { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+    .badge-Moderate { background-color: #fef9c3; color: #854d0e; border: 1px solid #fef08a; }
+    .badge-Major { background-color: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+    .badge-Critical { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+    /* NEW PRINT STYLES */
+    @media print {
+      header, main { display: none !important; }
+      #print-section { display: block !important; position: static; }
+      body { background-color: white; color: black; margin: 0; padding: 0; }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans min-h-screen">
+
+  <!-- SECTION: PRINTABLE REPORT -->
+  <div id="print-section" class="hidden p-8 max-w-4xl mx-auto text-black">
+    <div class="border-b-2 border-black pb-4 mb-6 flex justify-between items-end">
+      <div>
+        <h1 class="text-2xl font-bold uppercase">Transformer Inspection Report</h1>
+        <p class="text-sm text-gray-600">TPS-QR Operations & Maintenance</p>
+      </div>
+      <div class="text-right text-sm">
+        <p><strong>Report Gen:</strong> <span id="pr-gen-date"></span></p>
+      </div>
+    </div>
+    
+    <div class="grid grid-cols-2 gap-4 mb-6 border-2 border-black p-4 rounded bg-gray-50">
+      <div><strong>Transformer ID:</strong> <span id="pr-id" class="text-blue-900 font-semibold"></span></div>
+      <div><strong>Location:</strong> <span id="pr-loc"></span></div>
+      <div><strong>Inspection Date:</strong> <span id="pr-date"></span></div>
+      <div><strong>Inspector:</strong> <span id="pr-inspector"></span></div>
+      <div><strong>Overall Condition:</strong> <span id="pr-condition"></span></div>
+      <div><strong>Severity:</strong> <span id="pr-severity" class="font-bold"></span></div>
+    </div>
+
+    <h2 class="font-bold text-lg border-b-2 border-gray-400 mb-3 pb-1">Key Observations</h2>
+    <div class="grid grid-cols-2 gap-y-2 gap-x-4 text-sm mb-6" id="pr-observations">
+      <!-- Injected by JavaScript -->
+    </div>
+
+    <!-- NEW: Custom Observations Section -->
+    <div id="pr-custom-section" class="hidden mb-6">
+      <h2 class="font-bold text-lg border-b-2 border-gray-400 mb-2 pb-1">Custom Observations</h2>
+      <div class="grid grid-cols-2 gap-y-2 gap-x-4 text-sm" id="pr-custom-observations">
+        <!-- Injected by JavaScript -->
+      </div>
+    </div>
+
+    <div id="pr-action-section" class="border-2 border-black p-4 mb-6 hidden">
+      <h2 class="font-bold text-lg mb-2">Remarks & Corrective Action</h2>
+      <p class="text-sm italic" id="pr-remarks"></p>
+      <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded hidden" id="pr-action-box">
+        <p class="text-sm font-bold text-red-700">Required Action: <span id="pr-action" class="font-normal"></span></p>
+        <p class="text-sm font-bold text-red-700">Priority: <span id="pr-priority" class="font-normal"></span></p>
+      </div>
+    </div>
+
+    <div class="mt-20 flex justify-between px-8">
+      <div class="border-t border-black w-64 text-center pt-2 font-semibold">Inspector Signature</div>
+      <div class="border-t border-black w-64 text-center pt-2 font-semibold">Supervisor / Manager</div>
+    </div>
+  </div>
+
+  <!-- Sticky Industrial Header -->
+  <header class="sticky top-0 z-50 bg-blue-900 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i data-lucide="zap" class="text-yellow-400"></i>
+        <h1 class="text-lg md:text-xl font-bold tracking-wide">TPS-QR <span class="font-normal text-blue-200">| Transformer Inspection</span></h1>
+      </div>
+      <nav class="flex gap-2">
+        <button onclick="switchTab('dashboard')" id="tabBtn-dashboard" class="px-3 py-2 rounded flex items-center gap-1.5 text-sm bg-blue-800 transition">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span class="hidden sm:inline">Dashboard</span>
+        </button>
+        <button onclick="switchTab('form')" id="tabBtn-form" class="px-3 py-2 rounded flex items-center gap-1.5 text-sm hover:bg-blue-800/60 transition">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i><span class="hidden sm:inline">New Inspection</span>
+        </button>
+        <button onclick="switchTab('history')" id="tabBtn-history" class="px-3 py-2 rounded flex items-center gap-1.5 text-sm hover:bg-blue-800/60 transition">
+          <i data-lucide="history" class="w-4 h-4"></i><span class="hidden sm:inline">History</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto p-4 md:p-6">
+
+    <!-- SECTION 1: DASHBOARD -->
+    <div id="view-dashboard" class="space-y-6">
+      <div class="flex justify-between items-center">
+        <h2 class="text-2xl font-bold text-gray-800">Inspection Overview</h2>
+        <button onclick="switchTab('form')" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium shadow transition flex items-center gap-2">
+          <i data-lucide="plus" class="w-4 h-4"></i> New Inspection
+        </button>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-gray-600">
+          <p class="text-xs font-semibold text-gray-500 uppercase">Total Inspected</p>
+          <p id="stat-total" class="text-2xl font-bold text-gray-800 mt-1">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500">
+          <p class="text-xs font-semibold text-gray-500 uppercase">Normal</p>
+          <p id="stat-normal" class="text-2xl font-bold text-green-600 mt-1">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500">
+          <p class="text-xs font-semibold text-gray-500 uppercase">Minor Issues</p>
+          <p id="stat-minor" class="text-2xl font-bold text-blue-600 mt-1">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-yellow-500">
+          <p class="text-xs font-semibold text-gray-500 uppercase">Moderate</p>
+          <p id="stat-moderate" class="text-2xl font-bold text-yellow-600 mt-1">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-orange-500">
+          <p class="text-xs font-semibold text-gray-500 uppercase">Major Issues</p>
+          <p id="stat-major" class="text-2xl font-bold text-orange-600 mt-1">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-500">
+          <p class="text-xs font-semibold text-gray-500 uppercase">Critical</p>
+          <p id="stat-critical" class="text-2xl font-bold text-red-600 mt-1">0</p>
+        </div>
+      </div>
+
+      <!-- Severity Chart -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <h3 class="text-base font-bold text-gray-700 mb-4">Observations by Severity</h3>
+        <div class="h-64 relative flex items-center justify-center">
+          <canvas id="severityChart"></canvas>
+          <p id="no-data-msg" class="text-gray-400 text-sm hidden">No inspection records available.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: MAIN INSPECTION FORM -->
+    <div id="view-form" class="hidden max-w-4xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow border border-gray-200">
+      <h2 class="text-2xl font-bold text-gray-800 border-b pb-4 mb-6">Transformer Inspection & Observation</h2>
+
+      <!-- Smart Banners -->
+      <div id="banner-critical" class="hidden bg-red-100 border-l-4 border-red-600 text-red-800 p-4 mb-6 rounded items-center gap-3">
+        <i data-lucide="alert-octagon" class="w-6 h-6 flex-shrink-0"></i>
+        <span class="font-bold">Critical observation recorded. Immediate attention required.</span>
+      </div>
+
+      <div id="banner-leakage" class="hidden bg-orange-50 border-l-4 border-orange-500 text-orange-800 p-3 mb-6 rounded text-sm items-center gap-2">
+        <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
+        <span>Oil leakage observed — corrective action may be required.</span>
+      </div>
+
+      <form id="inspectionForm" onsubmit="handleFormSubmit(event)">
+        <!-- Transformer Details -->
+        <fieldset class="mb-8">
+          <legend class="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
+            <i data-lucide="cpu" class="w-5 h-5"></i> Transformer Details
+          </legend>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Transformer ID *</label>
+              <input type="text" id="transformerId" value="TR-" class="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" required />
+              <p id="err-transformerId" class="text-red-500 text-xs mt-1 hidden">Transformer ID is required.</p>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Name / Location *</label>
+              <input type="text" id="location" class="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" placeholder="e.g. Substation B Yard" required />
+              <p id="err-location" class="text-red-500 text-xs mt-1 hidden">Location is required.</p>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Rating</label>
+              <input type="text" id="rating" placeholder="e.g. 1000 kVA" class="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" />
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Other Info -->
+        <fieldset class="mb-8 border-t pt-6">
+          <legend class="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
+            <i data-lucide="user-check" class="w-5 h-5"></i> Inspection Info
+          </legend>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Inspection Date *</label>
+              <input type="date" id="inspectionDate" class="w-full p-2.5 border rounded-lg bg-gray-50" required />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Inspection Time *</label>
+              <input type="time" id="inspectionTime" class="w-full p-2.5 border rounded-lg bg-gray-50" required />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Technician / Inspector Name *</label>
+              <input type="text" id="inspectorName" class="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500" placeholder="e.g. John Doe" required />
+              <p id="err-inspectorName" class="text-red-500 text-xs mt-1 hidden">Inspector Name is required.</p>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Observations -->
+        <fieldset class="mb-8 bg-gray-50 p-6 rounded-xl border border-gray-200">
+          <legend class="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
+            <i data-lucide="sliders" class="w-5 h-5"></i> Observations
+          </legend>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Overall Condition -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Overall Condition *</label>
+              <select id="overallCondition" required class="w-full p-2.5 border rounded-lg bg-white">
+                <option value="">-- Select --</option>
+                <option>Normal</option>
+                <option>Satisfactory</option>
+                <option>Requires Attention</option>
+                <option>Critical</option>
+                <option>Under Maintenance</option>
+                <option>Out of Service</option>
+              </select>
+            </div>
+
+            <!-- Physical Condition -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Physical Condition</label>
+              <select id="physicalCondition" class="w-full p-2.5 border rounded-lg bg-white">
+                <option value="">-- Select --</option>
+                <option>Clean</option><option>Dusty</option><option>Dirty</option><option>Rusting</option>
+                <option>Corrosion</option><option>Paint Damaged</option><option>Physical Damage</option>
+                <option>Oil Leakage</option><option>No Abnormality</option>
+              </select>
+            </div>
+
+            <!-- Oil Level -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Oil Level</label>
+              <select id="oilLevel" class="w-full p-2.5 border rounded-lg bg-white">
+                <option value="">-- Select --</option>
+                <option>Normal</option><option>Low</option><option>Very Low</option>
+                <option>High</option><option>Cannot Be Checked</option><option>Not Applicable</option>
+              </select>
+            </div>
+
+            <!-- Oil Leakage -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Oil Leakage</label>
+              <select id="oilLeakage" onchange="checkLeakageAlert(this.value)" class="w-full p-2.5 border rounded-lg bg-white">
+                <option value="">-- Select --</option>
+                <option>No Leakage</option><option>Minor Leakage</option><option>Moderate Leakage</option>
+                <option>Major Leakage</option><option>Leakage at Bushing</option><option>Leakage at Radiator</option>
+                <option>Leakage at Valve</option><option>Leakage at Conservator</option><option>Leakage at Gasket / Joint</option>
+              </select>
+            </div>
+
+            <!-- Oil Temp -->
+            <div class="border-l-2 border-blue-400 pl-3">
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Oil Temperature</label>
+              <select id="oilTemperature" class="w-full p-2.5 border rounded-lg bg-white mb-2">
+                <option value="">-- Select Status --</option>
+                <option>Normal</option><option>High</option><option>Very High</option><option>Low</option><option>Temperature Gauge Not Working</option>
+              </select>
+              <input type="number" id="oilTempNumeric" placeholder="Temp (°C)" class="w-full p-2 border rounded text-sm bg-white" />
+            </div>
+
+            <!-- Winding Temp -->
+            <div class="border-l-2 border-blue-400 pl-3">
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Winding Temperature</label>
+              <select id="windingTemperature" class="w-full p-2.5 border rounded-lg bg-white mb-2">
+                <option value="">-- Select Status --</option>
+                <option>Normal</option><option>High</option><option>Very High</option><option>Temperature Indicator Faulty</option><option>Not Available</option>
+              </select>
+              <input type="number" id="windingTempNumeric" placeholder="Temp (°C)" class="w-full p-2 border rounded text-sm bg-white" />
+            </div>
+
+            <!-- Noise / Vibration -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Noise / Vibration</label>
+              <select id="noiseVibration" class="w-full p-2.5 border rounded-lg bg-white">
+                <option value="">-- Select --</option>
+                <option>Normal</option><option>Slightly High</option><option>Abnormal Noise</option>
+                <option>Humming Sound</option><option>Excessive Vibration</option><option>No Vibration</option>
+              </select>
+            </div>
+
+            <!-- Bushing Condition -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Bushing Condition</label>
+              <select id="bushingCondition" class="w-full p-2.5 border rounded-lg bg-white">
+                <option value="">-- Select --</option>
+                <option>Normal</option><option>Clean</option><option>Dirty</option><option>Cracked</option>
+                <option>Damaged</option><option>Oil Leakage</option><option>Flashover Mark</option><option>Loose Connection</option><option>Discoloration</option>
+              </select>
+            </div>
+
+            <!-- Breather Condition -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Breather Condition</label>
+              <select id="breatherCondition" class="w-full p-2.5 border rounded-lg bg-white">
+                <option value="">-- Select --</option>
+                <option>Normal</option><option>Silica Gel Normal</option><option>Silica Gel Partially Saturated</option><option>Silica Gel Fully Saturated</option><option>Breather Damaged</option><option>Breather Oil Low</option><option>Breather Blocked</option>
+              </select>
+            </div>
+
+            <!-- Conservator Condition -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Conservator Condition</label>
+              <select id="conservatorCondition" class="w-full p-2.5 border rounded-lg bg-white">
+                <option value="">-- Select --</option>
+                <option>Normal</option><option>Oil Level Normal</option><option>Oil Level Low</option><option>Oil Level High</option><option>Leakage</option><option>Corrosion</option><option>Damaged</option><option>Not Applicable</option>
+              </select>
+            </div>
+
+            <!-- Radiator Condition -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Radiator Condition</label>
+              <select id="radiatorCondition" class="w-full p-2.5 border rounded-lg bg-white">
+                <option value="">-- Select --</option>
+                <option>Normal</option><option>Clean</option><option>Dirty</option><option>Oil Leakage</option><option>Damaged</option><option>Corroded</option><option>Blocked</option><option>Not Applicable</option>
+              </select>
+            </div>
+
+            <!-- Buchholz Relay -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Buchholz Relay</label>
+              <select id="buchholzRelay" class="w-full p-2.5 border rounded-lg bg-white">
+                <option value="">-- Select --</option>
+                <option>Normal</option><option>No Alarm</option><option>Alarm Active</option><option>Trip Active</option><option>Oil Leakage</option><option>Relay Damaged</option><option>Inspection Required</option><option>Not Applicable</option>
+              </select>
+            </div>
+
+            <!-- Protection / Relay Status -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Protection / Relay Status</label>
+              <select id="protectionRelay" class="w-full p-2.5 border rounded-lg bg-white">
+                <option value="">-- Select --</option>
+                <option>Normal</option><option>Healthy</option><option>Alarm</option><option>Trip</option><option>Relay Fault</option><option>Communication Fault</option><option>Battery Fault</option><option>Not Available</option>
+              </select>
+            </div>
+
+            <!-- Earthing Condition -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Earthing Condition</label>
+              <select id="earthingCondition" class="w-full p-2.5 border rounded-lg bg-white">
+                <option value="">-- Select --</option>
+                <option>Normal</option><option>Good</option><option>Loose Connection</option><option>Corroded</option><option>Damaged</option><option>Earthing Missing</option><option>Requires Attention</option>
+              </select>
+            </div>
+
+            <!-- Cable / Terminal Condition -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Cable / Terminal Condition</label>
+              <select id="cableTerminalCondition" class="w-full p-2.5 border rounded-lg bg-white">
+                <option value="">-- Select --</option>
+                <option>Normal</option><option>Good</option><option>Loose</option><option>Damaged</option><option>Overheated</option><option>Discolored</option><option>Corroded</option><option>Insulation Damaged</option>
+              </select>
+            </div>
+
+            <!-- Tap Changer Condition -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Tap Changer Condition</label>
+              <select id="tapChangerCondition" class="w-full p-2.5 border rounded-lg bg-white">
+                <option value="">-- Select --</option>
+                <option>Normal</option><option>Oil Level Low</option><option>Oil Leakage</option><option>Abnormal Operation</option><option>Tap Position Indicator Fault</option><option>Motor / Drive Fault</option><option>Not Applicable</option>
+              </select>
+            </div>
+
+            <!-- Fire Protection -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Fire Protection</label>
+              <select id="fireProtection" class="w-full p-2.5 border rounded-lg bg-white">
+                <option value="">-- Select --</option>
+                <option>Available & Healthy</option><option>Available but Needs Maintenance</option><option>Not Available</option><option>Damaged</option><option>Fire Extinguisher Expired</option><option>Fire Protection System Fault</option>
+              </select>
+            </div>
+
+            <!-- Transformer Area / Surroundings -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Area / Surroundings</label>
+              <select id="surroundingCondition" class="w-full p-2.5 border rounded-lg bg-white">
+                <option value="">-- Select --</option>
+                <option>Clean & Clear</option><option>Dusty</option><option>Water Accumulation</option><option>Vegetation</option><option>Oil Spillage</option><option>Obstruction</option><option>Poor Housekeeping</option><option>Unauthorized Material</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Custom Observations -->
+        <fieldset class="mb-8">
+          <div class="flex justify-between items-center mb-3">
+            <legend class="text-base font-bold text-gray-700">Custom Observations</legend>
+            <button type="button" onclick="addCustomObservationField()" class="text-xs bg-gray-200 hover:bg-gray-300 font-semibold px-3 py-1.5 rounded flex items-center gap-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Custom Observation
+            </button>
+          </div>
+          <div id="custom-obs-container" class="space-y-3"></div>
+        </fieldset>
+
+        <!-- Severity & Corrective Action -->
+        <fieldset class="mb-8 border-t pt-6">
+          <legend class="text-lg font-bold text-blue-900 mb-4">Assessment & Actions</legend>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-2">Observation Severity *</label>
+              <select id="severity" onchange="handleSeverityChange(this.value)" required class="w-full p-3 border-2 rounded-lg font-semibold bg-gray-50 border-gray-300">
+                <option value="">-- Select Severity --</option>
+                <option value="Normal">Normal</option>
+                <option value="Minor">Minor</option>
+                <option value="Moderate">Moderate</option>
+                <option value="Major">Major</option>
+                <option value="Critical">Critical</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-2">Corrective Action Required?</label>
+              <select id="correctiveActionRequired" onchange="toggleCorrectiveFields(this.value)" class="w-full p-3 border rounded-lg bg-white">
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Observation Remarks</label>
+            <textarea id="remarks" rows="3" class="w-full p-3 border rounded-lg bg-gray-50 focus:bg-white" placeholder="Describe any abnormality..."></textarea>
+          </div>
+
+          <!-- Dynamic Corrective Action Section -->
+          <div id="correctiveActionSection" class="hidden mt-4 bg-yellow-50 p-4 border border-yellow-200 rounded-lg">
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Corrective Action / Recommendation *</label>
+            <textarea id="correctiveAction" rows="3" class="w-full p-3 border rounded-lg bg-white mb-3" placeholder="Enter planned maintenance or action..."></textarea>
+            
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Priority</label>
+            <select id="priority" class="w-full md:w-1/2 p-2.5 border rounded-lg bg-white">
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+              <option value="Immediate">Immediate</option>
+            </select>
+          </div>
+        </fieldset>
+
+        <!-- Photo Upload -->
+        <fieldset class="mb-8 border-t pt-6">
+          <legend class="text-lg font-bold text-blue-900 mb-3 flex items-center gap-2">
+            <i data-lucide="camera" class="w-5 h-5"></i> Observation Photos
+          </legend>
+          
+          <div class="flex items-center gap-3">
+            <input type="file" id="photoInput" accept="image/png, image/jpeg, image/jpg" capture="environment" multiple class="hidden" onchange="handlePhotoUpload(event)" />
+            <button type="button" onclick="document.getElementById('photoInput').click()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2 text-sm transition">
+              <i data-lucide="image-plus" class="w-4 h-4"></i> Take / Upload Photos
+            </button>
+            <span class="text-xs text-gray-500">Supports multiple JPG, PNG</span>
+          </div>
+
+          <div id="photoPreviewContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4"></div>
+        </fieldset>
+
+        <!-- Form Buttons -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-t pt-6">
+          <button type="button" onclick="confirmReset()" class="w-full sm:w-auto px-6 py-2.5 text-gray-600 bg-gray-200 hover:bg-gray-300 font-semibold rounded-lg transition">
+            Reset Form
+          </button>
+          <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+            <span id="draftNotice" class="text-green-600 text-xs font-semibold"></span>
+            <button type="button" onclick="saveDraft()" class="w-full sm:w-auto px-5 py-2.5 text-blue-900 bg-blue-100 hover:bg-blue-200 font-semibold rounded-lg flex justify-center items-center gap-2 transition">
+              <i data-lucide="save" class="w-4 h-4"></i> Save Draft
+            </button>
+            <button type="submit" class="w-full sm:w-auto px-7 py-2.5 text-white bg-blue-700 hover:bg-blue-800 font-bold rounded-lg flex justify-center items-center gap-2 shadow-lg transition">
+              <i data-lucide="send" class="w-4 h-4"></i> Submit Inspection
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- SECTION 3: INSPECTION HISTORY -->
+    <div id="view-history" class="hidden bg-white p-6 rounded-xl shadow border border-gray-200">
+      <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+        <h2 class="text-2xl font-bold text-gray-800">Inspection History</h2>
+        
+        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <input type="text" id="searchHistory" oninput="renderHistoryTable()" placeholder="Search ID or Location..." class="p-2 border rounded-lg text-sm w-full sm:w-64" />
+          <select id="historyFilterSeverity" onchange="renderHistoryTable()" class="p-2 border rounded-lg text-sm bg-white">
+            <option value="">All Severities</option>
+            <option value="Normal">Normal</option>
+            <option value="Minor">Minor</option>
+            <option value="Moderate">Moderate</option>
+            <option value="Major">Major</option>
+            <option value="Critical">Critical</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-gray-100 text-gray-700 uppercase border-b border-gray-200">
+              <th class="p-3">Transformer ID / Location</th>
+              <th class="p-3">Date</th>
+              <th class="p-3">Inspector</th>
+              <th class="p-3">Overall Condition</th>
+              <th class="p-3">Severity</th>
+              <th class="p-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- SECTION 4: VIEW DETAILS MODAL -->
+    <div id="detailsModal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col">
+        <div class="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center z-10 rounded-t-xl">
+          <h3 class="text-xl font-bold text-blue-900">Inspection Details</h3>
+          <button onclick="closeModal()" class="text-gray-500 hover:text-red-600 p-1 transition">
+            <i data-lucide="x" class="w-6 h-6"></i>
+          </button>
+        </div>
+        <div id="modalContent" class="p-6">
+          <!-- Content dynamically injected by JavaScript -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+// 1. Global State
+    let uploadedPhotos = [];
+    let inspectionHistory = [];
+    let customObservationsList = [];
+    let severityChartInstance = null;
+
+    // Jinja2 injects this from Flask-Login
+    const isMasterUser = {{ 'true' if current_user.is_authenticated and current_user.username == 'master' else 'false' }};
+
+    // 2. Initialization
+   window.addEventListener('DOMContentLoaded', () => {
+      console.log("Page DOM fully loaded. Starting initialization...");
+      
+      // 1. Fetch data FIRST before anything else can crash
+      console.log("Triggering database fetch...");
+      loadInspectionsFromDB(); 
+
+      // 2. Wrap the rest in try-catch blocks so if one fails, the others keep going
+      try { 
+        if (typeof lucide !== 'undefined') lucide.createIcons(); 
+      } catch(e) { console.warn("Lucide icons failed to load", e); }
+      
+      try { 
+        setCurrentDateTime(); 
+      } catch(e) { console.warn("Could not set date/time", e); }
+      
+      try { 
+        initChart(); 
+      } catch(e) { console.warn("Chart failed to initialize (Chart.js might be missing)", e); }
+      
+      try { 
+        checkForDraft(); 
+      } catch(e) { console.warn("Draft check failed", e); }
+    });
+
+    // 3. Database Operations
+    async function loadInspectionsFromDB() {
+      try {
+        const response = await fetch('/api/inspections');
+        if (response.ok) {
+          inspectionHistory = await response.json();
+          renderHistoryTable();
+          updateDashboard();
+        } else {
+          console.error("Backend returned an error status:", response.status);
+        }
+      } catch (error) {
+        console.error("Network or fetch execution error:", error);
+      }
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      const data = getFormDataObject();
+
+      try {
+        const response = await fetch('/api/inspections', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+          localStorage.removeItem('tps_transformer_draft');
+          document.getElementById('inspectionForm').reset();
+          uploadedPhotos = [];
+          customObservationsList = [];
+          renderPhotos();
+          document.getElementById('custom-obs-container').innerHTML = '';
+          setCurrentDateTime();
+          handleSeverityChange('');
+          checkLeakageAlert('No Leakage');
+          
+          if (confirm("Inspection saved to database successfully! Would you like to print the report now?")) {
+            inspectionHistory.unshift(data); 
+            printReport(0);
+          }
+          
+          await loadInspectionsFromDB(); 
+          switchTab('history');
+        } else {
+          alert("Error saving inspection to database.");
+        }
+      } catch (error) {
+        console.error("Submission failed:", error);
+        alert("Network error. Please check your connection.");
+      }
+    }
+
+    async function deleteInspection(idx) {
+      if (!isMasterUser) {
+        alert("Authorization Denied: Only the master account can delete inspection records.");
+        return;
+      }
+
+      if (confirm("Delete this inspection record from the database?")) {
+        const dbId = inspectionHistory[idx].id;
+        try {
+          const response = await fetch(`/api/inspections/${dbId}`, { method: 'DELETE' });
+          if (response.ok) {
+            await loadInspectionsFromDB(); 
+          } else {
+            alert("Failed to delete record.");
+          }
+        } catch (error) {
+          console.error("Delete failed:", error);
+        }
+      }
+    }
+
+   // 4. UI Rendering Functions
+    function renderHistoryTable() {
+      const tbody = document.getElementById('historyTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      const history = inspectionHistory; 
+
+      if (!history || history.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-gray-500 italic">No inspections found in the database.</td></tr>`;
+        return;
+      }
+
+      // Grab the search value
+      const searchInput = document.getElementById('searchHistory');
+      const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      
+      // Grab the severity filter using your EXACT HTML ID: historyFilterSeverity
+      const severityInput = document.getElementById('historyFilterSeverity');
+      const filterSeverity = severityInput ? severityInput.value.toLowerCase().trim() : '';
+
+      // Bulletproof filter logic
+      const filtered = history.filter(item => {
+        // Check search match
+        const matchesSearch = (item.transformerId || '').toLowerCase().includes(searchTerm) || 
+                              (item.location || '').toLowerCase().includes(searchTerm);
+        
+        // Check severity match (ignores case and empty spaces)
+        const itemSeverity = (item.severity || 'Normal').toLowerCase().trim();
+        const matchesSeverity = filterSeverity === '' || itemSeverity === filterSeverity;
+        
+        return matchesSearch && matchesSeverity;
+      });
+
+      filtered.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = "border-b hover:bg-gray-50";
+        
+        const deleteButtonHtml = typeof isMasterUser !== 'undefined' && isMasterUser ? `
+          <button onclick="deleteInspection(${idx})" class="text-red-500 hover:text-red-700 transition" title="Delete">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        ` : '';
+
+        tr.innerHTML = `
+          <td class="p-3">
+            <div class="font-bold text-blue-900">${item.transformerId || 'N/A'}</div>
+            <div class="text-xs text-gray-500">${item.location || 'N/A'}</div>
+          </td>
+          <td class="p-3 text-gray-600">${item.inspectionDate || '-'}</td>
+          <td class="p-3 text-gray-600">${item.inspectorName || '-'}</td>
+          <td class="p-3 text-gray-700">${item.overallCondition || '-'}</td>
+          <td class="p-3">
+            <span class="px-2.5 py-1 rounded-full text-xs font-semibold badge-${item.severity || 'Normal'}">
+              ${item.severity || 'Normal'}
+            </span>
+          </td>
+          <td class="p-3 flex gap-3">
+            <button onclick="viewInspection(${idx})" class="text-blue-600 hover:text-blue-800 transition" title="View Details">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+            <button onclick="printReport(${idx})" class="text-gray-600 hover:text-gray-800 transition" title="Print Report">
+              <i data-lucide="printer" class="w-4 h-4"></i>
+            </button>
+            ${deleteButtonHtml}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function updateDashboard() {
+      // Fix: Now uses the database variable instead of localStorage
+      const history = inspectionHistory; 
+      const counts = { Normal: 0, Minor: 0, Moderate: 0, Major: 0, Critical: 0 };
+      history.forEach(item => { if (counts[item.severity] !== undefined) counts[item.severity]++; });
+
+      document.getElementById('stat-total').textContent = history.length;
+      document.getElementById('stat-normal').textContent = counts.Normal;
+      document.getElementById('stat-minor').textContent = counts.Minor;
+      document.getElementById('stat-moderate').textContent = counts.Moderate;
+      document.getElementById('stat-major').textContent = counts.Major;
+      document.getElementById('stat-critical').textContent = counts.Critical;
+
+      if (severityChartInstance) {
+        severityChartInstance.data.datasets[0].data = [
+          counts.Normal, counts.Minor, counts.Moderate, counts.Major, counts.Critical
+        ];
+        severityChartInstance.update();
+      }
+    }
+
+    function viewInspection(idx) {
+      const item = inspectionHistory[idx];
+      if (!item) return;
+
+      let html = `<div class="grid grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-6 text-sm mb-6">`;
+
+      const addRow = (label, value) => {
+        if (value) html += `<div><span class="block text-xs font-bold text-gray-500 uppercase">${label}</span><span class="block mt-1 text-gray-800">${value}</span></div>`;
+      };
+
+      addRow('Transformer ID', item.transformerId);
+      addRow('Location', item.location);
+      addRow('Rating', item.rating);
+      addRow('Inspector Name', item.inspectorName);
+      addRow('Date', item.inspectionDate);
+      addRow('Time', item.inspectionTime);
+      addRow('Overall Condition', item.overallCondition);
+      
+      if(item.severity) {
+         html += `<div><span class="block text-xs font-bold text-gray-500 uppercase">Severity</span><span class="inline-block mt-1 px-2.5 py-1 rounded-full text-xs font-semibold badge-${item.severity}">${item.severity}</span></div>`;
+      }
+
+      html += `</div><hr class="my-6 border-gray-200" /><h4 class="font-bold text-lg text-blue-900 mb-4 flex items-center gap-2"><i data-lucide="sliders" class="w-5 h-5"></i> Detailed Observations</h4><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">`;
+
+      const fields = {
+        'physicalCondition': 'Physical Condition', 'oilLevel': 'Oil Level', 'oilLeakage': 'Oil Leakage',
+        'oilTemperature': 'Oil Temp Status', 'oilTempNumeric': 'Oil Temp (°C)', 'windingTemperature': 'Winding Temp Status',
+        'windingTempNumeric': 'Winding Temp (°C)', 'noiseVibration': 'Noise / Vibration', 'bushingCondition': 'Bushing Condition',
+        'breatherCondition': 'Breather Condition', 'conservatorCondition': 'Conservator Condition', 'radiatorCondition': 'Radiator Condition',
+        'buchholzRelay': 'Buchholz Relay', 'protectionRelay': 'Protection Relay', 'earthingCondition': 'Earthing Condition',
+        'cableTerminalCondition': 'Cable/Terminal Condition', 'tapChangerCondition': 'Tap Changer Condition',
+        'fireProtection': 'Fire Protection', 'surroundingCondition': 'Surrounding Condition'
+      };
+
+      for (const [key, label] of Object.entries(fields)) {
+        if (item[key]) {
+          html += `<div class="bg-gray-50 p-2.5 rounded border border-gray-100 shadow-sm"><span class="block text-xs font-semibold text-gray-500 mb-1">${label}</span><span class="block font-medium">${item[key]}</span></div>`;
+        }
+      }
+      html += `</div>`;
+
+      if (item.customObservations && item.customObservations.length > 0) {
+         html += `<h4 class="font-bold text-base text-gray-800 mt-6 mb-3">Custom Observations</h4><div class="space-y-2">`;
+         item.customObservations.forEach(obs => {
+             html += `<div class="bg-gray-50 p-3 rounded border border-gray-200 text-sm"><span class="font-bold text-gray-700">${obs.name}</span>: ${obs.value} <span class="ml-2 px-2 py-0.5 rounded-full text-xs badge-${obs.severity}">${obs.severity}</span></div>`;
+         });
+         html += `</div>`;
+      }
+
+      if (item.remarks || item.correctiveActionRequired === 'Yes') {
+         html += `<hr class="my-6 border-gray-200" /><h4 class="font-bold text-lg text-blue-900 mb-4">Assessment & Actions</h4>`;
+         if (item.remarks) html += `<p class="text-sm mb-3 text-gray-700 bg-gray-50 p-3 rounded border border-gray-200"><strong>Remarks:</strong><br/>${item.remarks}</p>`;
+         if (item.correctiveActionRequired === 'Yes') {
+            html += `<div class="bg-yellow-50 border border-yellow-300 p-4 rounded text-sm mt-3"><p class="font-bold text-red-700 uppercase tracking-wide text-xs mb-1">Corrective Action Required</p><p class="text-gray-800 font-medium mb-1">${item.correctiveAction}</p><p class="text-gray-600">Priority: <span class="font-bold text-black">${item.priority}</span></p></div>`;
+         }
+      }
+
+      if (item.photos && item.photos.length > 0) {
+          html += `<hr class="my-6 border-gray-200" /><h4 class="font-bold text-lg text-blue-900 mb-4 flex items-center gap-2"><i data-lucide="image" class="w-5 h-5"></i> Photos</h4><div class="grid grid-cols-2 sm:grid-cols-4 gap-4">`;
+          item.photos.forEach(photo => {
+              html += `<img src="${photo}" class="w-full h-32 object-cover rounded-lg border border-gray-300 shadow-sm hover:scale-105 transition-transform" />`;
+          });
+          html += `</div>`;
+      }
+
+      document.getElementById('modalContent').innerHTML = html;
+      document.getElementById('detailsModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function printReport(idx) {
+      const item = inspectionHistory[idx];
+      if (!item) return;
+
+      document.getElementById('pr-gen-date').textContent = new Date().toLocaleString();
+      document.getElementById('pr-id').textContent = item.transformerId || 'N/A';
+      document.getElementById('pr-loc').textContent = item.location || 'N/A';
+      document.getElementById('pr-date').textContent = `${item.inspectionDate} at ${item.inspectionTime}`;
+      document.getElementById('pr-inspector').textContent = item.inspectorName || 'N/A';
+      document.getElementById('pr-condition').textContent = item.overallCondition || 'N/A';
+      document.getElementById('pr-severity').textContent = item.severity || 'N/A';
+
+      const obsContainer = document.getElementById('pr-observations');
+      obsContainer.innerHTML = '';
+      
+      const allFields = {
+        'physicalCondition': 'Physical Condition', 'oilLevel': 'Oil Level', 'oilLeakage': 'Oil Leakage',
+        'oilTemperature': 'Oil Temp Status', 'oilTempNumeric': 'Oil Temp (°C)', 'windingTemperature': 'Winding Temp Status',
+        'windingTempNumeric': 'Winding Temp (°C)', 'noiseVibration': 'Noise / Vibration', 'bushingCondition': 'Bushing Condition',
+        'breatherCondition': 'Breather Condition', 'conservatorCondition': 'Conservator Condition', 'radiatorCondition': 'Radiator Condition',
+        'buchholzRelay': 'Buchholz Relay', 'protectionRelay': 'Protection Relay', 'earthingCondition': 'Earthing Condition',
+        'cableTerminalCondition': 'Cable/Terminal Condition', 'tapChangerCondition': 'Tap Changer Condition',
+        'fireProtection': 'Fire Protection', 'surroundingCondition': 'Surrounding Condition'
+      };
+
+      for (const [key, label] of Object.entries(allFields)) {
+        if (item[key]) {
+          obsContainer.innerHTML += `<div class="border-b border-gray-200 pb-1"><span class="text-gray-600">${label}:</span> <span class="font-medium text-black">${item[key]}</span></div>`;
+        }
+      }
+
+      const customSection = document.getElementById('pr-custom-section');
+      const customContainer = document.getElementById('pr-custom-observations');
+      
+      if (item.customObservations && item.customObservations.length > 0) {
+        customSection.classList.remove('hidden');
+        customContainer.innerHTML = '';
+        item.customObservations.forEach(obs => {
+          customContainer.innerHTML += `<div class="border-b border-gray-200 pb-1"><span class="text-gray-600">${obs.name}:</span> <span class="font-medium text-black">${obs.value} <span class="text-xs ml-1 italic text-gray-500">(${obs.severity})</span></span></div>`;
+        });
+      } else {
+        if (customSection) customSection.classList.add('hidden');
+      }
+
+      const actionSection = document.getElementById('pr-action-section');
+      const actionBox = document.getElementById('pr-action-box');
+      
+      if (item.remarks || item.correctiveActionRequired === 'Yes') {
+        actionSection.classList.remove('hidden');
+        document.getElementById('pr-remarks').textContent = item.remarks || 'No additional remarks provided.';
+        
+        if (item.correctiveActionRequired === 'Yes') {
+          actionBox.classList.remove('hidden');
+          document.getElementById('pr-action').textContent = item.correctiveAction;
+          document.getElementById('pr-priority').textContent = item.priority;
+        } else {
+          actionBox.classList.add('hidden');
+        }
+      } else {
+        actionSection.classList.add('hidden');
+      }
+
+      const printSection = document.getElementById('print-section');
+      printSection.classList.remove('hidden');
+      window.print();
+      printSection.classList.add('hidden');
+    }
+
+    // 5. General Utilities and Form Logic
+    function setCurrentDateTime() {
+      const now = new Date();
+      document.getElementById('inspectionDate').value = now.toISOString().split('T')[0];
+      document.getElementById('inspectionTime').value = now.toTimeString().substring(0, 5);
+    }
+
+    function switchTab(tab) {
+      ['dashboard', 'form', 'history'].forEach(t => {
+        const viewEl = document.getElementById(`view-${t}`);
+        const btnEl = document.getElementById(`tabBtn-${t}`);
+        if (viewEl) viewEl.classList.add('hidden');
+        if (btnEl) btnEl.className = 'px-3 py-2 rounded flex items-center gap-1.5 text-sm hover:bg-blue-800/60 transition';
+      });
+      
+      const targetView = document.getElementById(`view-${tab}`);
+      const targetBtn = document.getElementById(`tabBtn-${tab}`);
+      
+      if (targetView) targetView.classList.remove('hidden');
+      if (targetBtn) targetBtn.className = 'px-3 py-2 rounded flex items-center gap-1.5 text-sm bg-blue-800 transition font-semibold';
+      
+      if (tab === 'dashboard') updateDashboard();
+      if (tab === 'history') renderHistoryTable();
+      
+      // FIX: Only draw icons if the library is successfully loaded
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    }
+
+    function fetchRatingMock(id) {
+      const mockDir = { "TR-01": "2500 kVA", "TR-02": "1600 kVA", "TR-03": "5000 kVA" };
+      document.getElementById('rating').value = mockDir[id.trim().toUpperCase()] || "1000 kVA (Default)";
+    }
+
+    function checkLeakageAlert(val) {
+      const banner = document.getElementById('banner-leakage');
+      if (val && val !== 'No Leakage') {
+        banner.classList.remove('hidden');
+        banner.classList.add('flex');
+      } else {
+        banner.classList.add('hidden');
+        banner.classList.remove('flex');
+      }
+    }
+
+    function handleSeverityChange(val) {
+      const banner = document.getElementById('banner-critical');
+      const select = document.getElementById('severity');
+      
+      if (val === 'Critical') {
+        banner.classList.remove('hidden');
+        banner.classList.add('flex');
+      } else {
+        banner.classList.add('hidden');
+        banner.classList.remove('flex');
+      }
+      select.className = `w-full p-3 border-2 rounded-lg font-semibold badge-${val || 'Normal'}`;
+    }
+
+    function toggleCorrectiveFields(val) {
+      const section = document.getElementById('correctiveActionSection');
+      if (val === 'Yes') section.classList.remove('hidden');
+      else section.classList.add('hidden');
+    }
+
+    function addCustomObservationField() {
+      const container = document.getElementById('custom-obs-container');
+      const index = customObservationsList.length;
+      customObservationsList.push({ name: '', value: '', severity: 'Normal', remarks: '' });
+
+      const div = document.createElement('div');
+      div.id = `custom-obs-${index}`;
+      div.className = "p-3 border rounded-lg bg-gray-50 flex flex-col md:flex-row gap-2 items-center";
+      div.innerHTML = `
+        <input type="text" placeholder="Observation Name" onchange="customObservationsList[${index}].name = this.value" class="p-2 border rounded text-sm w-full md:w-1/3" />
+        <input type="text" placeholder="Observation Value" onchange="customObservationsList[${index}].value = this.value" class="p-2 border rounded text-sm w-full md:w-1/3" />
+        <select onchange="customObservationsList[${index}].severity = this.value" class="p-2 border rounded text-sm w-full md:w-1/4">
+          <option>Normal</option><option>Minor</option><option>Moderate</option><option>Major</option><option>Critical</option>
+        </select>
+        <button type="button" onclick="removeCustomObservation(${index})" class="text-red-500 hover:text-red-700 p-1">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      `;
+      container.appendChild(div);
+      lucide.createIcons();
+    }
+
+    function removeCustomObservation(index) {
+      document.getElementById(`custom-obs-${index}`)?.remove();
+      customObservationsList[index] = null;
+    }
+
+    function handlePhotoUpload(e) {
+      const files = Array.from(e.target.files);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          uploadedPhotos.push(event.target.result);
+          renderPhotos();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function renderPhotos() {
+      const container = document.getElementById('photoPreviewContainer');
+      container.innerHTML = '';
+      uploadedPhotos.forEach((src, idx) => {
+        const wrap = document.createElement('div');
+        wrap.className = "relative rounded-lg overflow-hidden border border-gray-300 group";
+        wrap.innerHTML = `
+          <img src="${src}" class="w-full h-24 object-cover" />
+          <button type="button" onclick="removePhoto(${idx})" class="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full text-xs">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          </button>
+        `;
+        container.appendChild(wrap);
+      });
+      lucide.createIcons();
+    }
+
+    function removePhoto(idx) {
+      uploadedPhotos.splice(idx, 1);
+      renderPhotos();
+    }
+
+    function saveDraft() {
+      const formData = getFormDataObject();
+      localStorage.setItem('tps_transformer_draft', JSON.stringify(formData));
+      const notice = document.getElementById('draftNotice');
+      notice.textContent = "Draft saved locally!";
+      setTimeout(() => notice.textContent = "", 3000);
+    }
+
+    function checkForDraft() {
+      const draft = localStorage.getItem('tps_transformer_draft');
+      if (draft && confirm("Saved inspection draft found. Load it?")) {
+        const data = JSON.parse(draft);
+        Object.keys(data).forEach(k => {
+          const el = document.getElementById(k);
+          if (el) el.value = data[k];
+        });
+        if (data.severity) handleSeverityChange(data.severity);
+        if (data.oilLeakage) checkLeakageAlert(data.oilLeakage);
+        if (data.correctiveActionRequired) toggleCorrectiveFields(data.correctiveActionRequired);
+      }
+    }
+
+    function confirmReset() {
+      if (confirm("Are you sure you want to clear this entire form?")) {
+        document.getElementById('inspectionForm').reset();
+        uploadedPhotos = [];
+        customObservationsList = [];
+        renderPhotos();
+        document.getElementById('custom-obs-container').innerHTML = '';
+        setCurrentDateTime();
+        handleSeverityChange('');
+        checkLeakageAlert('No Leakage');
+      }
+    }
+
+    function getFormDataObject() {
+      const fields = [
+        'transformerId', 'location', 'rating', 'inspectionDate', 'inspectionTime',
+        'inspectorName', 'overallCondition', 'physicalCondition', 'oilLevel',
+        'oilLeakage', 'oilTemperature', 'oilTempNumeric', 'windingTemperature',
+        'windingTempNumeric', 'noiseVibration', 'bushingCondition', 'breatherCondition',
+        'conservatorCondition', 'radiatorCondition', 'buchholzRelay', 'protectionRelay',
+        'earthingCondition', 'cableTerminalCondition', 'tapChangerCondition',
+        'fireProtection', 'surroundingCondition', 'severity', 'remarks',
+        'correctiveActionRequired', 'correctiveAction', 'priority'
+      ];
+      const obj = {};
+      fields.forEach(f => {
+        const el = document.getElementById(f);
+        if (el) obj[f] = el.value;
+      });
+      obj.customObservations = customObservationsList.filter(Boolean);
+      obj.photos = uploadedPhotos;
+      obj.createdAt = new Date().toISOString();
+      return obj;
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('severityChart').getContext('2d');
+      severityChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Normal', 'Minor', 'Moderate', 'Major', 'Critical'],
+          datasets: [{
+            data: [0, 0, 0, 0, 0],
+            backgroundColor: ['#22c55e', '#3b82f6', '#eab308', '#f97316', '#ef4444']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+    }
+
+    function closeModal() {
+      document.getElementById('detailsModal').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>

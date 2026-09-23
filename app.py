@@ -3,6 +3,8 @@ from functools import wraps
 import os
 import io
 import zipfile
+from sqlalchemy.dialects.postgresql import JSON  # Specifically for PostgreSQL JSON fields
+
 
 from dotenv import load_dotenv
 import pandas as pd  
@@ -12,6 +14,7 @@ from flask import (
     abort,
     flash,
     redirect,
+    jsonify,
     render_template,
     request,
     send_file,
@@ -121,6 +124,24 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+
+class TransformerInspection(db.Model):
+    __tablename__ = 'transformer_inspections'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    transformer_id = db.Column(db.String(50), nullable=False)
+    location = db.Column(db.String(100), nullable=False)
+    inspection_date = db.Column(db.String(20), nullable=False)
+    inspection_time = db.Column(db.String(20), nullable=False)
+    inspector_name = db.Column(db.String(100), nullable=False)
+    overall_condition = db.Column(db.String(50), nullable=False)
+    severity = db.Column(db.String(50), nullable=False)
+    
+    # Stores the complete raw form data (including photos and custom fields)
+    full_data = db.Column(JSON, nullable=False) 
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -154,6 +175,16 @@ def logout():
     flash("Session terminated safely.", "info")
     return redirect(url_for("home"))
 
+    from flask import Flask, render_template, request, jsonify
+
+# (transformer inspection route)
+
+@app.route('/transformer-inspection')
+def transformer_inspection():
+    # Pass any pre-existing asset data or render the template
+    return render_template('transformer_inspection.html')
+
+
 @app.route("/")
 def home():
     search_query = request.args.get("q", "").strip().lower()
@@ -183,6 +214,51 @@ def home():
         search_query=search_query,
         status_filter=status_filter,
     )
+
+
+# 1. Fetch all inspections for the history table
+@app.route('/api/inspections', methods=['GET'])
+def get_inspections():
+    inspections = TransformerInspection.query.order_by(TransformerInspection.created_at.desc()).all()
+    results = []
+    for insp in inspections:
+        data = insp.full_data
+        data['id'] = insp.id # Inject the database ID so the frontend can target it for deletion
+        results.append(data)
+    
+    return jsonify(results), 200
+
+# 2. Save a new inspection
+@app.route('/api/inspections', methods=['POST'])
+def save_inspection():
+    data = request.get_json()
+    
+    new_inspection = TransformerInspection(
+        transformer_id=data.get('transformerId', ''),
+        location=data.get('location', ''),
+        inspection_date=data.get('inspectionDate', ''),
+        inspection_time=data.get('inspectionTime', ''),
+        inspector_name=data.get('inspectorName', ''),
+        overall_condition=data.get('overallCondition', ''),
+        severity=data.get('severity', ''),
+        full_data=data  # Stores the entire payload
+    )
+    
+    db.session.add(new_inspection)
+    db.session.commit()
+    return jsonify({"message": "Inspection saved successfully"}), 201
+
+# 3. Delete an inspection (Master Only)
+@app.route('/api/inspections/<int:id>', methods=['DELETE'])
+@login_required
+def delete_inspection(id):
+    if current_user.username != 'master':
+        return jsonify({"error": "Unauthorized"}), 403
+        
+    insp = TransformerInspection.query.get_or_404(id)
+    db.session.delete(insp)
+    db.session.commit()
+    return jsonify({"message": "Deleted successfully"}), 200
 
 
 @app.route("/health")
