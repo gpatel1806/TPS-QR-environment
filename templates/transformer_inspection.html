@@ -559,8 +559,7 @@
     let severityChartInstance = null;
 
     // Jinja2 injects this from Flask-Login
-    const isMasterUser = {{ 'true' if current_user.is_authenticated and current_user.username == 'master' else 'false' }};
-
+    const isMasterUser = {{ 'true' if current_user.is_authenticated else 'false' }};
     // 2. Initialization
    window.addEventListener('DOMContentLoaded', () => {
       console.log("Page DOM fully loaded. Starting initialization...");
@@ -643,7 +642,7 @@
 
     async function deleteInspection(idx) {
       if (!isMasterUser) {
-        alert("Authorization Denied: Only the master account can delete inspection records.");
+        alert("Authorization Denied: You must be logged in to delete inspection records.");
         return;
       }
 

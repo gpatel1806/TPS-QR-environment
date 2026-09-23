@@ -252,14 +252,12 @@ def save_inspection():
 @app.route('/api/inspections/<int:id>', methods=['DELETE'])
 @login_required
 def delete_inspection(id):
-    if current_user.username != 'master':
-        return jsonify({"error": "Unauthorized"}), 403
-        
+    # The @login_required decorator handles the security now, 
+    # so any authenticated engineer can delete a record.
     insp = TransformerInspection.query.get_or_404(id)
     db.session.delete(insp)
     db.session.commit()
     return jsonify({"message": "Deleted successfully"}), 200
-
 
 @app.route("/health")
 def health_status():
