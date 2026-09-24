@@ -1,20 +1,19 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required
+from flask_login import login_required, current_user
 from db import db
 from .models import ElectricalReport, ElectricalDistribution
 from datetime import datetime, timedelta
 
 reports_bp = Blueprint('reports', __name__, url_prefix='/reports')
 
+# VIEW ROUTE - No login required
 @reports_bp.route('/')
-@login_required
 def index():
     return render_template('reports/index.html')
 
+# VIEW ROUTE - No login required
 @reports_bp.route('/electrical')
-@login_required
 def electrical_dashboard():
-    # FEATURE 2: Check if a specific date was requested
     selected_date_str = request.args.get('date')
     
     if selected_date_str:
@@ -52,15 +51,13 @@ def electrical_dashboard():
         prev_dist_map=prev_dist_map
     )
 
-# FEATURE 3: API to fetch historical data for the Detailed Table modal
+# API VIEW ROUTE - No login required
 @reports_bp.route('/api/historical-load')
-@login_required
 def api_historical_load():
     load_name = request.args.get('name')
     days = int(request.args.get('days', 30))
     cutoff_date = datetime.utcnow().date() - timedelta(days=days)
     
-    # Query database for this specific load over the requested timeframe
     results = db.session.query(
         ElectricalReport.reporting_date, ElectricalDistribution.consumption_mwh
     ).join(
@@ -76,18 +73,15 @@ def api_historical_load():
         'load_name': load_name
     })
 
-# FEATURE 4: Custom Trend Analysis Tool Page
+# VIEW ROUTE - No login required
 @reports_bp.route('/trends')
-@login_required
 def custom_trends():
-    # Fetch all unique load names dynamically for the checkboxes
     unique_loads = db.session.query(ElectricalDistribution.load_name).distinct().all()
     load_names = [l[0] for l in unique_loads]
     return render_template('reports/trends.html', load_names=load_names)
 
-# FEATURE 4: API to process the Custom Trend graph data
+# API VIEW ROUTE - No login required
 @reports_bp.route('/api/custom-trends', methods=['POST'])
-@login_required
 def api_custom_trends():
     data = request.json
     metrics = data.get('metrics', [])
@@ -100,8 +94,6 @@ def api_custom_trends():
     
     dates = [r.reporting_date.strftime('%d-%b') for r in reports]
     datasets, stats = [], []
-    
-    # Pre-define some colors for up to 5 lines
     colors = ['#0d6efd', '#dc3545', '#198754', '#ffc107', '#6f42c1']
     
     for idx, metric in enumerate(metrics):
@@ -131,8 +123,11 @@ def api_custom_trends():
         
     return jsonify({'dates': dates, 'datasets': datasets, 'stats': stats})
 
+# ==========================================
+# DATA ENTRY ROUTE - LOGIN STRICTLY REQUIRED
+# ==========================================
 @reports_bp.route('/electrical/entry', methods=['GET', 'POST'])
-@login_required
+@login_required  # <-- ONLY THIS ONE KEEPS IT
 def enter_data():
     if request.method == 'POST':
         try:
