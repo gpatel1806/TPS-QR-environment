@@ -13,7 +13,7 @@ MRTPS | Central Management Dashboard
 <div class="row align-items-center mb-4 mt-2 gy-3">
     <!-- Title Section -->
     <div class="col-lg-4 col-md-12">
-        <h3 class="fw-bold mb-0 text-dark"><i class="bi bi-grid-1x2-fill text-primary me-2"></i>TPS DASHBOARD</h3>
+        <h3 class="fw-bold mb-0 text-dark"><i class="bi bi-grid-1x2-fill text-primary me-2"></i>TPS PRAGYA</h3>
         <span class="text-muted small">Mathura Refinery TPS Portal</span>
     </div>
     
@@ -74,15 +74,17 @@ MRTPS | Central Management Dashboard
         </a>
     </div>
     
-    <!-- Future Expansion Modules -->
+<!-- Plant Reports Module -->
     <div class="col-md-4 col-sm-6">
-        <div class="card h-100 shadow-sm border-0 bg-light opacity-75">
-            <div class="card-body text-center py-4">
-                <i class="bi bi-thermometer-sun display-5 text-secondary mb-2"></i>
-                <h5 class="fw-bold text-secondary mb-0">Substation Ambience</h5>
-                <span class="badge bg-secondary mt-2">Coming Soon</span>
+        <a href="{{ url_for('reports.index') }}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm border-0 module-card hover-lift">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-file-earmark-bar-graph-fill display-5 text-success mb-2"></i>
+                    <h5 class="fw-bold text-dark mb-0">Plant Reports</h5>
+                    <span class="text-muted small">Analytics & Dashboards</span>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-md-4 col-sm-6">
         <div class="card h-100 shadow-sm border-0 bg-light opacity-75">

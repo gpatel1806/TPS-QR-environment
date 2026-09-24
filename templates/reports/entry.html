@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Enter Electrical Data{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4 mt-2">
+    <div class="col-md-8">
+        <h3 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-clipboard-data text-primary me-2"></i>Daily Data Entry
+        </h3>
+        <span class="text-muted small">Log Generation, Import, and Distribution loads.</span>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <a href="{{ url_for('reports.electrical_dashboard') }}" class="btn btn-outline-secondary btn-sm shadow-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-info shadow-sm border-0 small">
+    <i class="bi bi-info-circle-fill me-2"></i><strong>Excel Pro-Tip:</strong> You can copy a whole column of values directly from your Excel sheet, click the first input box below, and press <code>Ctrl+V</code>. The system will automatically paste the values down the entire row!
+</div>
+
+<form method="POST" action="{{ url_for('reports.enter_data') }}" class="needs-validation">
+    <!-- Date Selection -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary mb-0">Reporting Date</label>
+                </div>
+                <div class="col-md-4">
+                    <input type="date" name="reporting_date" class="form-control fw-bold" required id="todayDate">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- Generation & Grid -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white pt-3 pb-2 border-bottom">
+                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-lightning text-warning me-2"></i>Generation & Supply (MWh)</h6>
+                </div>
+                <div class="card-body excel-paste-zone">
+                    <div class="mb-2 row"><label class="col-sm-4 col-form-label small fw-medium">STG-1</label><div class="col-sm-8"><input type="number" step="0.01" name="stg_1" class="form-control form-control-sm paste-target"></div></div>
+                    <div class="mb-2 row"><label class="col-sm-4 col-form-label small fw-medium">STG-2</label><div class="col-sm-8"><input type="number" step="0.01" name="stg_2" class="form-control form-control-sm paste-target"></div></div>
+                    <div class="mb-2 row"><label class="col-sm-4 col-form-label small fw-medium">STG-3</label><div class="col-sm-8"><input type="number" step="0.01" name="stg_3" class="form-control form-control-sm paste-target"></div></div>
+                    <div class="mb-2 row"><label class="col-sm-4 col-form-label small fw-medium">GT-1</label><div class="col-sm-8"><input type="number" step="0.01" name="gt_1" class="form-control form-control-sm paste-target"></div></div>
+                    <div class="mb-2 row"><label class="col-sm-4 col-form-label small fw-medium">GT-2</label><div class="col-sm-8"><input type="number" step="0.01" name="gt_2" class="form-control form-control-sm paste-target"></div></div>
+                    <div class="mb-2 row"><label class="col-sm-4 col-form-label small fw-medium">GT-3</label><div class="col-sm-8"><input type="number" step="0.01" name="gt_3" class="form-control form-control-sm paste-target"></div></div>
+                    <hr>
+                    <div class="mb-2 row"><label class="col-sm-4 col-form-label small fw-bold text-primary">Grid Import</label><div class="col-sm-8"><input type="number" step="0.01" name="grid_import" class="form-control form-control-sm border-primary paste-target"></div></div>
+                    <div class="mb-2 row"><label class="col-sm-4 col-form-label small fw-bold text-danger">System Peak (MW)</label><div class="col-sm-8"><input type="number" step="0.01" name="total_system_peak" class="form-control form-control-sm border-danger paste-target"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Distributions (Dynamic Loads) -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white pt-3 pb-2 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-diagram-3 text-info me-2"></i>Major Distributions (MWh)</h6>
+                    <button type="button" class="btn btn-sm btn-outline-primary py-0" onclick="addDistributionRow()">+ Add Load</button>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-borderless table-sm mb-0 excel-paste-zone" id="distributionTable">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="text-muted small ps-3">Load Center Name</th>
+                                <th class="text-muted small">Consumption (MWh)</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Pre-filled common loads based on your Excel to save time -->
+                            {% set default_loads = ['TPS Aux.', 'HCU', 'CRU', 'Process', 'DHDT', 'AVU Revamp'] %}
+                            {% for load in default_loads %}
+                            <tr>
+                                <td class="ps-3"><input type="text" name="dist_name[]" class="form-control form-control-sm bg-light" value="{{ load }}"></td>
+                                <td><input type="number" step="0.01" name="dist_val[]" class="form-control form-control-sm paste-target"></td>
+                                <td><button type="button" class="btn btn-sm btn-light text-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-white border-top">
+                     <div class="row">
+                        <div class="col-6"><input type="number" step="0.01" name="losses_mwh" class="form-control form-control-sm" placeholder="Losses (MWh)"></div>
+                        <div class="col-6"><input type="number" step="0.01" name="losses_percent" class="form-control form-control-sm" placeholder="Losses (%)"></div>
+                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-end mb-5">
+        <button type="submit" class="btn btn-success fw-bold px-5 py-2 shadow-sm">
+            <i class="bi bi-save me-2"></i> Save Plant Data to PostgreSQL
+        </button>
+    </div>
+</form>
+
+<script>
+    // Set default date to today
+    document.getElementById('todayDate').valueAsDate = new Date();
+
+    // Add new distribution row dynamically
+    function addDistributionRow() {
+        const tbody = document.querySelector('#distributionTable tbody');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="ps-3"><input type="text" name="dist_name[]" class="form-control form-control-sm" placeholder="E.g., Tank Farm"></td>
+            <td><input type="number" step="0.01" name="dist_val[]" class="form-control form-control-sm paste-target"></td>
+            <td><button type="button" class="btn btn-sm btn-light text-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+        attachPasteListeners(); // Re-attach listeners to new inputs
+    }
+
+    // SMART EXCEL PASTE LOGIC
+    function attachPasteListeners() {
+        const zones = document.querySelectorAll('.excel-paste-zone');
+        zones.forEach(zone => {
+            const targets = zone.querySelectorAll('.paste-target');
+            targets.forEach((input, index) => {
+                // Remove old listeners to prevent duplicates
+                input.replaceWith(input.cloneNode(true)); 
+            });
+            
+            // Re-select after cloning
+            const freshTargets = zone.querySelectorAll('.paste-target');
+            freshTargets.forEach((input, index) => {
+                input.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    // Get data from clipboard
+                    let pasteData = (e.clipboardData || window.clipboardData).getData('text');
+                    
+                    // Split by new line (Excel rows) or tabs
+                    let values = pasteData.split(/\r\n|\n|\r/).filter(val => val.trim() !== '');
+                    
+                    // Distribute values down the inputs starting from the one clicked
+                    for (let i = 0; i < values.length; i++) {
+                        if (index + i < freshTargets.length) {
+                            // Clean up currency/commas if copied from formatted Excel cells
+                            let cleanNum = values[i].replace(/[^0-9.-]+/g,"");
+                            freshTargets[index + i].value = cleanNum;
+                        }
+                    }
+                });
+            });
+        });
+    }
+    
+    // Initialize paste listeners on page load
+    document.addEventListener('DOMContentLoaded', attachPasteListeners);
+</script>
+{% endblock %}

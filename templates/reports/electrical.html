@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Electrical Report Dashboard{% endblock %}
+
+{% block content %}
+<!-- Header with Date Filter and Trend Tool Button -->
+<div class="row align-items-center mb-4 mt-2 gy-3">
+    <div class="col-md-5">
+        <h3 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-lightning-charge-fill text-primary me-2"></i>Electrical Dashboard
+        </h3>
+        {% if report %}
+            <span class="text-muted small">Reporting Date: <strong class="text-dark">{{ report.reporting_date.strftime('%d-%b-%Y') }}</strong></span>
+        {% else %}
+            <span class="text-muted small">No historical data available.</span>
+        {% endif %}
+    </div>
+    <div class="col-md-7 d-flex justify-content-md-end align-items-center flex-wrap gap-2">
+        <!-- FEATURE 2: Date Selector -->
+        <form method="GET" action="{{ url_for('reports.electrical_dashboard') }}" class="d-flex align-items-center bg-white border rounded ps-2 shadow-sm me-2">
+            <label class="text-muted small fw-bold me-2"><i class="bi bi-calendar3"></i> Date:</label>
+            <input type="date" name="date" class="form-control form-control-sm border-0" value="{{ report.reporting_date.strftime('%Y-%m-%d') if report else '' }}" required>
+            <button type="submit" class="btn btn-sm btn-light border-start"><i class="bi bi-search"></i></button>
+        </form>
+        
+        <a href="{{ url_for('reports.custom_trends') }}" class="btn btn-outline-primary btn-sm fw-semibold shadow-sm">
+            <i class="bi bi-graph-up me-1"></i> Custom Trends
+        </a>
+        <a href="{{ url_for('reports.enter_data') }}" class="btn btn-primary btn-sm fw-semibold shadow-sm">
+            <i class="bi bi-clipboard-data me-1"></i> Enter Data
+        </a>
+    </div>
+</div>
+
+{% if report %}
+<!-- KPI Section -->
+<div class="row g-3 mb-4">
+    <!-- Total Supply -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card shadow-sm border-0 h-100 border-start border-primary border-4">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small fw-bold mb-2">Total Supply</h6>
+                <h3 class="fw-bold text-dark mb-0">{{ "%.2f"|format(report.total_supply) }} <span class="fs-6 text-muted fw-normal">MWh</span></h3>
+                {% if previous and previous.total_supply > 0 %}
+                    {% set diff = ((report.total_supply - previous.total_supply) / previous.total_supply * 100)|round(1) %}
+                    <span class="small fw-semibold {% if diff > 0 %}text-danger{% elif diff < 0 %}text-success{% else %}text-muted{% endif %} d-block mt-1">
+                        {% if diff > 0 %}<i class="bi bi-arrow-up-right"></i> +{{ diff }}%{% elif diff < 0 %}<i class="bi bi-arrow-down-right"></i> {{ diff }}%{% else %}<i class="bi bi-dash"></i> No Change{% endif %} vs previous
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <!-- Grid Import -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card shadow-sm border-0 h-100 border-start border-warning border-4">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small fw-bold mb-2">Grid Import</h6>
+                <h3 class="fw-bold text-dark mb-0">{{ "%.2f"|format(report.grid_import) }} <span class="fs-6 text-muted fw-normal">MWh</span></h3>
+                {% if previous and previous.grid_import > 0 %}
+                    {% set diff = ((report.grid_import - previous.grid_import) / previous.grid_import * 100)|round(1) %}
+                    <span class="small fw-semibold {% if diff > 0 %}text-danger{% elif diff < 0 %}text-success{% else %}text-muted{% endif %} d-block mt-1 mb-1">
+                        {% if diff > 0 %}<i class="bi bi-arrow-up-right"></i> +{{ diff }}%{% elif diff < 0 %}<i class="bi bi-arrow-down-right"></i> {{ diff }}%{% else %}<i class="bi bi-dash"></i> No Change{% endif %} vs previous
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <!-- System Peak -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card shadow-sm border-0 h-100 border-start border-danger border-4">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small fw-bold mb-2">System Peak Load</h6>
+                <h3 class="fw-bold text-dark mb-0">{{ "%.2f"|format(report.total_system_peak) }} <span class="fs-6 text-muted fw-normal">MW</span></h3>
+                {% if previous and previous.total_system_peak > 0 %}
+                    {% set diff = ((report.total_system_peak - previous.total_system_peak) / previous.total_system_peak * 100)|round(1) %}
+                    <span class="small fw-semibold {% if diff > 0 %}text-danger{% elif diff < 0 %}text-success{% else %}text-muted{% endif %} d-block mt-1">
+                        {% if diff > 0 %}<i class="bi bi-arrow-up-right"></i> +{{ diff }}%{% elif diff < 0 %}<i class="bi bi-arrow-down-right"></i> {{ diff }}%{% else %}<i class="bi bi-dash"></i> No Change{% endif %} vs previous
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <!-- Losses -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card shadow-sm border-0 h-100 border-start border-secondary border-4">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small fw-bold mb-2">System Losses</h6>
+                <h3 class="fw-bold text-dark mb-0">{{ "%.2f"|format(report.losses_percent) }} <span class="fs-6 text-muted fw-normal">%</span></h3>
+                <span class="badge bg-light text-secondary border mt-2">{{ "%.2f"|format(report.losses_mwh) }} MWh</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-pie-chart-fill text-primary me-2"></i>Generation Mix</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="generationMixChart" style="max-height: 350px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <!-- FEATURE 1: Top 10 Consumers -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-bar-chart-fill text-primary me-2"></i>Top 10 Major Consumers</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="topConsumersChart" style="max-height: 350px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Data Table -->
+<div class="card shadow-sm border-0 mb-5">
+    <div class="card-header bg-white border-bottom py-3">
+        <h6 class="fw-bold text-dark mb-0"><i class="bi bi-table text-secondary me-2"></i>Detailed Distribution Data</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle mb-0 small">
+                <thead class="table-light text-muted">
+                    <tr>
+                        <th class="ps-4">Rank</th>
+                        <th>Consumer / Plant Area</th>
+                        <th class="text-end pe-4">Consumption (MWh)</th>
+                        <th class="text-center" style="width: 100px;">Analysis</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dist in distributions %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-muted">{{ loop.index }}</td>
+                        <td class="fw-semibold text-dark">{{ dist.load_name }}</td>
+                        <td class="text-end pe-4">{{ "%.2f"|format(dist.consumption_mwh) }}</td>
+                        <!-- FEATURE 3: History Graph Button -->
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-info py-0" onclick="openLoadTrend('{{ dist.load_name }}')" title="View Historical Trend">
+                                <i class="bi bi-graph-up"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">No distribution data recorded for this date.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- FEATURE 3: Historical Load Modal -->
+<div class="modal fade" id="loadTrendModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-graph-up text-info me-2"></i>Consumption History: <span id="modalLoadName" class="text-primary"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-center mb-3 gap-2">
+                    <button class="btn btn-sm btn-outline-primary active period-btn" onclick="fetchTrend(7, this)">Weekly</button>
+                    <button class="btn btn-sm btn-outline-primary period-btn" onclick="fetchTrend(30, this)">Monthly</button>
+                    <button class="btn btn-sm btn-outline-primary period-btn" onclick="fetchTrend(365, this)">Yearly</button>
+                </div>
+                <div style="height: 300px; width: 100%;">
+                    <canvas id="modalTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // 1. Generation Mix Chart
+    new Chart(document.getElementById('generationMixChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: ['STG-1', 'STG-2', 'STG-3', 'GT-1', 'GT-2', 'GT-3', 'Grid Import'],
+            datasets: [{
+                data: [{{ report.stg_1 }}, {{ report.stg_2 }}, {{ report.stg_3 }}, {{ report.gt_1 }}, {{ report.gt_2 }}, {{ report.gt_3 }}, {{ report.grid_import }}],
+                backgroundColor: ['#0d6efd', '#3d8bfd', '#6ea8fe', '#20c997', '#3dd5a7', '#5ce1b6', '#ffc107'],
+                borderWidth: 0
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } }, cutout: '55%' }
+    });
+
+    // 2. Top 10 Consumers Chart (Changed [:7] to [:10])
+    new Chart(document.getElementById('topConsumersChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: [{% for dist in distributions[:10] %} '{{ dist.load_name }}', {% endfor %}],
+            datasets: [
+                { label: 'Today (MWh)', data: [{% for dist in distributions[:10] %} {{ dist.consumption_mwh }}, {% endfor %}], backgroundColor: '#0d6efd', borderRadius: 4 },
+                { label: 'Previous (MWh)', data: [{% for dist in distributions[:10] %} {{ prev_dist_map.get(dist.load_name, 0) }}, {% endfor %}], backgroundColor: '#adb5bd', borderRadius: 4 }
+            ]
+        },
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, grid: { color: '#f8f9fa' } }, y: { grid: { display: false } } } }
+    });
+
+    // 3. FEATURE 3 Modal Logic
+    let modalChartInstance = null;
+    let currentLoadName = '';
+
+    function openLoadTrend(loadName) {
+        currentLoadName = loadName;
+        document.getElementById('modalLoadName').innerText = loadName;
+        const modal = new bootstrap.Modal(document.getElementById('loadTrendModal'));
+        modal.show();
+        // Default to Weekly (7 days)
+        document.querySelectorAll('.period-btn')[0].click();
+    }
+
+    function fetchTrend(days, btnElement) {
+        // Update button active state
+        document.querySelectorAll('.period-btn').forEach(btn => btn.classList.remove('active'));
+        btnElement.classList.add('active');
+
+        // Fetch data via AJAX
+        fetch(`/reports/api/historical-load?name=${encodeURIComponent(currentLoadName)}&days=${days}`)
+            .then(response => response.json())
+            .then(data => {
+                if (modalChartInstance) modalChartInstance.destroy(); // Destroy old chart
+                
+                const ctx = document.getElementById('modalTrendChart').getContext('2d');
+                modalChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.dates,
+                        datasets: [{
+                            label: `${currentLoadName} (MWh)`,
+                            data: data.values,
+                            borderColor: '#17a2b8',
+                            backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                });
+            });
+    }
+</script>
+{% endif %}
+{% endblock %}

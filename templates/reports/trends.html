@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Custom Trend Analysis{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4 mt-2">
+    <div class="col-md-8">
+        <h3 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-graph-up text-primary me-2"></i>Custom Trend Analysis
+        </h3>
+        <span class="text-muted small">Compare up to 5 metrics to identify historical plant correlations.</span>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <a href="{{ url_for('reports.electrical_dashboard') }}" class="btn btn-outline-secondary btn-sm shadow-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Sidebar: Controls -->
+    <div class="col-lg-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-sliders me-2"></i>Graph Parameters</h6>
+            </div>
+            <div class="card-body bg-light">
+                <form id="trendControlForm">
+                    <!-- Period Selection -->
+                    <label class="form-label small fw-bold text-secondary mb-1">Time Period</label>
+                    <select id="timePeriod" class="form-select form-select-sm mb-4">
+                        <option value="7">Last 7 Days (Weekly)</option>
+                        <option value="30" selected>Last 30 Days (Monthly)</option>
+                        <option value="90">Last 90 Days (Quarterly)</option>
+                        <option value="365">Last 365 Days (Yearly)</option>
+                    </select>
+
+                    <!-- Metric Selection -->
+                    <label class="form-label small fw-bold text-secondary mb-1">Select Metrics (Max 5)</label>
+                    <div class="bg-white border rounded p-2" style="max-height: 350px; overflow-y: auto;">
+                        
+                        <div class="text-muted small fw-bold mb-1 border-bottom pb-1">Generation & Supply</div>
+                        <div class="form-check small"><input class="form-check-input metric-check" type="checkbox" value="total_supply" checked><label class="form-check-label">Total Supply</label></div>
+                        <div class="form-check small"><input class="form-check-input metric-check" type="checkbox" value="grid_import"><label class="form-check-label">Grid Import</label></div>
+                        <div class="form-check small"><input class="form-check-input metric-check" type="checkbox" value="total_generation"><label class="form-check-label">Total Generation</label></div>
+                        <div class="form-check small"><input class="form-check-input metric-check" type="checkbox" value="stg_1"><label class="form-check-label">STG-1</label></div>
+                        <div class="form-check small"><input class="form-check-input metric-check" type="checkbox" value="gt_1"><label class="form-check-label">GT-1</label></div>
+                        
+                        <div class="text-muted small fw-bold mb-1 mt-3 border-bottom pb-1">Peak & Losses</div>
+                        <div class="form-check small"><input class="form-check-input metric-check" type="checkbox" value="total_system_peak"><label class="form-check-label">Total System Peak</label></div>
+                        <div class="form-check small"><input class="form-check-input metric-check" type="checkbox" value="losses_mwh"><label class="form-check-label">Total Losses (MWh)</label></div>
+
+                        <div class="text-muted small fw-bold mb-1 mt-3 border-bottom pb-1">Distribution Loads</div>
+                        {% for load in load_names %}
+                        <div class="form-check small"><input class="form-check-input metric-check" type="checkbox" value="dist_{{ load }}"><label class="form-check-label">{{ load }}</label></div>
+                        {% endfor %}
+                    </div>
+                    
+                    <button type="button" class="btn btn-primary btn-sm w-100 mt-4 fw-bold shadow-sm" onclick="generateGraph()">
+                        <i class="bi bi-play-fill"></i> Generate Graph
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Area: Chart & Data Table -->
+    <div class="col-lg-9">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4">
+                <div style="height: 400px; width: 100%;">
+                    <canvas id="customMainChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytical Data Table -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-calculator me-2"></i>Statistical Analysis (Selected Period)</h6>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover table-borderless align-middle mb-0 text-center">
+                    <thead class="table-light text-muted small">
+                        <tr>
+                            <th class="text-start ps-4">Selected Metric</th>
+                            <th>Average (Mean)</th>
+                            <th class="text-danger">Peak (Max)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statsTableBody">
+                        <tr><td colspan="3" class="text-muted py-4 small">Select metrics and click "Generate Graph" to view statistics.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let mainChartInstance = null;
+
+    // Limit Checkboxes to 5 max
+    document.querySelectorAll('.metric-check').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            let checked = document.querySelectorAll('.metric-check:checked');
+            if (checked.length > 5) {
+                this.checked = false;
+                alert("You can only compare a maximum of 5 metrics at a time.");
+            }
+        });
+    });
+
+    function generateGraph() {
+        const days = document.getElementById('timePeriod').value;
+        const checkedBoxes = document.querySelectorAll('.metric-check:checked');
+        
+        if (checkedBoxes.length === 0) {
+            alert("Please select at least one metric to graph.");
+            return;
+        }
+
+        const metrics = Array.from(checkedBoxes).map(cb => cb.value);
+
+        // POST request to backend API
+        fetch('/reports/api/custom-trends', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ metrics: metrics, days: days })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // 1. Render Chart
+            if (mainChartInstance) mainChartInstance.destroy();
+            const ctx = document.getElementById('customMainChart').getContext('2d');
+            mainChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.dates,
+                    datasets: data.datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { tooltip: { mode: 'index', intersect: false } },
+                    interaction: { mode: 'nearest', axis: 'x', intersect: false },
+                }
+            });
+
+            // 2. Render Statistical Table
+            const tbody = document.getElementById('statsTableBody');
+            tbody.innerHTML = '';
+            data.stats.forEach(stat => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="text-start ps-4 fw-bold text-secondary">${stat.metric}</td>
+                        <td class="fw-semibold">${stat.avg}</td>
+                        <td class="fw-bold text-danger">${stat.peak}</td>
+                    </tr>
+                `;
+            });
+        });
+    }
+
+    // Generate graph automatically on first load
+    document.addEventListener("DOMContentLoaded", generateGraph);
+</script>
+{% endblock %}

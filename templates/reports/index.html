@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Plant Reports Dashboard{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4 mt-2">
+    <div class="col-12">
+        <h3 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-file-earmark-bar-graph-fill text-primary me-2"></i>Plant Reports
+        </h3>
+        <span class="text-muted small">Centralized Data & Analytics</span>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Electrical Report (Available) -->
+    <div class="col-lg-3 col-md-6">
+        <a href="{{ url_for('reports.electrical_dashboard') }}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm border-0 module-card hover-lift border-top border-primary border-4">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-lightning-charge display-4 text-primary mb-3"></i>
+                    <h5 class="fw-bold text-dark mb-1">Electrical Report</h5>
+                    <span class="badge bg-success rounded-pill mt-2">Available</span>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- DM Plant Report (Coming Soon) -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 shadow-sm border-0 bg-light opacity-75">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-water display-4 text-secondary mb-3"></i>
+                <h5 class="fw-bold text-secondary mb-1">DM Plant Report</h5>
+                <span class="badge bg-secondary rounded-pill mt-2">Coming Soon</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Boiler Report (Coming Soon) -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 shadow-sm border-0 bg-light opacity-75">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-fire display-4 text-secondary mb-3"></i>
+                <h5 class="fw-bold text-secondary mb-1">Boiler Report</h5>
+                <span class="badge bg-secondary rounded-pill mt-2">Coming Soon</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid Report (Coming Soon) -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 shadow-sm border-0 bg-light opacity-75">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-broadcast display-4 text-secondary mb-3"></i>
+                <h5 class="fw-bold text-secondary mb-1">Grid Report</h5>
+                <span class="badge bg-secondary rounded-pill mt-2">Coming Soon</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-lift { 
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+    }
+    .hover-lift:hover { 
+        transform: translateY(-5px); 
+        box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important; 
+    }
+</style>
+{% endblock %}

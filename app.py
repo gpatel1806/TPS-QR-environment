@@ -167,9 +167,17 @@ class ActivityLog(db.Model):
     action = db.Column(db.String(255), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
+def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+# --- NEW CODE: Register Reports Blueprint ---
+from reports.routes import reports_bp
+app.register_blueprint(reports_bp)
+# ------------------------------------------
+
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.get(User, int(user_id))
+    return User.query.get(int(user_id))
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
